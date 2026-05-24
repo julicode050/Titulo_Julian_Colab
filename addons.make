@@ -1,0 +1,4 @@
+ofxCenteredTrueTypeFont-master
+ofxOsc
+ofxTuio
+ofxXmlSettings
