@@ -27,6 +27,13 @@ public:
     float prevAngle = 0.0f;        // último ángulo registrado del token
     bool hasInitialAngle = false;  // indica si ya inicializamos prevAngle
 
+    // clasificación & utils public para ofApp
+    char classifyShape(const vector<ofVec2f>& pts) const;
+    float angleBetween(const ofVec2f& a, const ofVec2f& b, const ofVec2f& c) const;
+    bool approxEqual(float a, float b, float tolerance = 12.0f) const;
+    ofVec2f centroid(const vector<ofVec2f>& pts) const;
+    vector<ofVec2f> orderByAngle(const vector<ofVec2f>& pts) const;
+
 private:
     struct Touch { ofVec2f pos; long id; };
     vector<Touch> cursors;          // coords normalizadas 0..1
@@ -38,15 +45,4 @@ private:
     char detectedId = '?';
 
     ofxTuioReceiver tuio;
-
-    // clasificación
-    char classifyShape(const vector<ofVec2f>& pts) const;
-    float angleBetween(const ofVec2f& a, const ofVec2f& b, const ofVec2f& c) const;
-    bool approxEqual(float a, float b, float tolerance = 12.0f) const;
-    
-    // utils
-    ofVec2f centroid(const vector<ofVec2f>& pts) const;
-    vector<ofVec2f> orderByAngle(const vector<ofVec2f>& pts) const;
-
-
 };
