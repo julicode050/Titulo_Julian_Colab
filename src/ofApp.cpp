@@ -2,17 +2,28 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-    ofBackground(35);
-    ofSetWindowTitle("Titulo Julian Colab");
+    ofBackground(135, 206, 235); // Sky blue
+    ofSetWindowTitle("Titulo Julian Colab - Fence Builder");
 
-    groundY = ofGetHeight() - 100.0f;
-    targetPos = glm::vec2(ofGetWidth() / 2.0f + 200.0f, groundY);
+    groundY = ofGetHeight() - 150.0f;
+    
+    // Sheep Placeholder
+    sheepPos = glm::vec2(ofGetWidth() * 0.75f, groundY - 30.0f);
+    sheepVel = glm::vec2(-0.5f, 0.0f);
 
     // Initialize token tracking
     token.setup(ofVec2f(0,0));
-
-    // Reset game state and log position
-    keyPressed('r');
+    
+    // Initialize 2 logs
+    logs.clear();
+    for (int i = 0; i < 2; ++i) {
+        FenceLog log;
+        log.posA = glm::vec2(100.0f + (i * 300.0f), groundY);
+        log.posB = glm::vec2(100.0f + (i * 300.0f) + logLength, groundY);
+        log.posA_prev = log.posA;
+        log.posB_prev = log.posB;
+        logs.push_back(log);
+    }
 }
 
 //--------------------------------------------------------------
@@ -52,65 +63,162 @@ void ofApp::update(){
             auto ordered = token.orderByAngle(clusters[i]);
             tokenID = token.classifyShape(ordered);
         } else if (clusters[i].size() == 1) {
-            // Debug simulation: Hold key A/C/B/F/G/H while dragging to simulate a token
+            // Debug simulation: Hold key A/C/B/F/G/H/D while dragging to simulate a token
             if (ofGetKeyPressed('a') || ofGetKeyPressed('A')) tokenID = 'A';
             else if (ofGetKeyPressed('c') || ofGetKeyPressed('C')) tokenID = 'C';
             else if (ofGetKeyPressed('b') || ofGetKeyPressed('B')) tokenID = 'B';
-            else if (ofGetKeyPressed('f') || ofGetKeyPressed('F')) tokenID = 'F';
-            else if (ofGetKeyPressed('g') || ofGetKeyPressed('G')) tokenID = 'G';
-            else if (ofGetKeyPressed('h') || ofGetKeyPressed('H')) tokenID = 'H';
+            else if (ofGetKeyPressed('d') || ofGetKeyPressed('D')) tokenID = 'D'; // Hammer
         }
 
         // 3. Project to 2D world plane (screen coordinates)
         glm::vec2 wPos(centroid.x, centroid.y);
-        activeTokens.push_back({tokenID, wPos, i});
+        
+        // Track offset lifetime based on origin
+        if (tokenOffsets.find(tokenID) == tokenOffsets.end()) {
+            if (tokenID == 'D') {
+                // Hammer action area must be below the hammer (positive Y)
+                tokenOffsets[tokenID] = glm::vec2(0.0f, 150.0f);
+            } else {
+                // Grabbing tokens depend on the half they originated in (X axis)
+                float xOffset = (wPos.x < ofGetWidth() / 2.0f) ? 150.0f : -150.0f;
+                tokenOffsets[tokenID] = glm::vec2(xOffset, 0.0f);
+            }
+        }
+        
+        glm::vec2 aPos = wPos + tokenOffsets[tokenID];
+        activeTokens.push_back({tokenID, wPos, aPos, i});
+        
+        tokenTimeouts[tokenID] = 0; // reset timeout since it's currently active
+    }
+
+    // --- Menu Logic ---
+    if (gameState == GAME_MENU) {
+        float btnW = 300; float btnH = 100;
+        float btnX1 = ofGetWidth()/2.0f - btnW - 20.0f;
+        float btnX2 = ofGetWidth()/2.0f + 20.0f;
+        float btnY = ofGetHeight()/2.0f - btnH/2.0f;
+        
+        auto checkClick = [&](float x, float y) {
+            if (y > btnY && y < btnY + btnH) {
+                if (x > btnX1 && x < btnX1 + btnW) {
+                    currentMode = COOP_MODE;
+                    gameState = GAME_PLAYING;
+                } else if (x > btnX2 && x < btnX2 + btnW) {
+                    currentMode = SOLO_MODE;
+                    gameState = GAME_PLAYING;
+                }
+            }
+        };
+
+        if (ofGetMousePressed()) checkClick(ofGetMouseX(), ofGetMouseY());
+        for (auto &t : activeTokens) checkClick(t.actionPos.x, t.actionPos.y);
+        
+        return; // Skip game logic while in menu
+    }
+
+    // --- Hammer Logic (Token D) ---
+    for (auto &t : activeTokens) {
+        if (t.id == 'D') {
+            glm::vec2 actionPos = t.actionPos;
+            
+            for (auto &log : logs) {
+                if (!log.isPlanted) {
+                    // Check if Hammer action point is hitting the top end (End A)
+                    if (glm::distance(actionPos, log.posA) < grabThreshold) {
+                        // Optional: Ensure it's roughly vertical before planting
+                        glm::vec2 logDir = glm::normalize(log.posA - log.posB);
+                        if (logDir.y < -0.7f && log.posB.y >= groundY - 10.0f) {
+                            log.isPlanted = true;
+                            log.grabbedA = false;
+                            log.grabbedB = false;
+                            // Lock it exactly vertical
+                            log.posA.x = log.posB.x;
+                            log.posA_prev = log.posA;
+                            log.posB_prev = log.posB;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // --- Grabbing logic ---
-    // Release End A if the token 'A' is no longer near posA
-    if (grabbedA) {
-        bool found = false;
-        for (auto &t : activeTokens) {
-            if (t.id == 'A' && glm::distance(t.worldPos, posA) < grabThreshold) {
-                posA = t.worldPos;
-                found = true;
-                break;
+    auto updateGrabState = [&](bool& grabbed, glm::vec2& pos, int& lossFrames, char targetToken1, char targetToken2) {
+        if (!grabbed) {
+            for (auto &t : activeTokens) {
+                if ((t.id == targetToken1 || t.id == targetToken2) && glm::distance(t.actionPos, pos) < grabThreshold) {
+                    grabbed = true;
+                    lossFrames = 0;
+                    pos = t.actionPos;
+                    break;
+                }
+            }
+        } else {
+            bool found = false;
+            for (auto &t : activeTokens) {
+                if ((t.id == targetToken1 || t.id == targetToken2) && glm::distance(t.actionPos, pos) < grabThreshold) {
+                    pos = t.actionPos;
+                    found = true;
+                    lossFrames = 0; // reset
+                    break;
+                }
+            }
+            if (!found) {
+                lossFrames++;
+                if (lossFrames > 30) {
+                    grabbed = false;
+                    lossFrames = 0;
+                }
             }
         }
-        if (!found) grabbedA = false;
-    }
+    };
 
-    // Release End B if token 'C' or 'B' is no longer near posB
-    if (grabbedB) {
-        bool found = false;
-        for (auto &t : activeTokens) {
-            if ((t.id == 'C' || t.id == 'B') && glm::distance(t.worldPos, posB) < grabThreshold) {
-                posB = t.worldPos;
-                found = true;
-                break;
-            }
+    if (currentMode == COOP_MODE) {
+        for (auto &log : logs) {
+            if (log.isPlanted) continue;
+            updateGrabState(log.grabbedA, log.posA, log.grabLossFramesA, 'A', 'A');
+            updateGrabState(log.grabbedB, log.posB, log.grabLossFramesB, 'B', 'C');
         }
-        if (!found) grabbedB = false;
-    }
-
-    // Try grabbing End A with Token A
-    if (!grabbedA) {
-        for (auto &t : activeTokens) {
-            if (t.id == 'A' && glm::distance(t.worldPos, posA) < grabThreshold) {
-                grabbedA = true;
-                posA = t.worldPos;
-                break;
-            }
-        }
-    }
-
-    // Try grabbing End B with Token C or B
-    if (!grabbedB) {
-        for (auto &t : activeTokens) {
-            if ((t.id == 'C' || t.id == 'B') && glm::distance(t.worldPos, posB) < grabThreshold) {
-                grabbedB = true;
-                posB = t.worldPos;
-                break;
+    } else {
+        // SOLO MODE logic
+        for (auto &log : logs) {
+            if (log.isPlanted) continue;
+            
+            glm::vec2 center = (log.posA + log.posB) * 0.5f;
+            
+            if (!log.grabbedSolo) {
+                for (auto &t : activeTokens) {
+                    if ((t.id == 'A' || t.id == 'B' || t.id == 'C') && glm::distance(t.actionPos, center) < grabThreshold * 1.5f) {
+                        log.grabbedSolo = true;
+                        log.grabLossFramesSolo = 0;
+                        log.soloGrabOffsetA = log.posA - t.actionPos;
+                        log.soloGrabOffsetB = log.posB - t.actionPos;
+                        break;
+                    }
+                }
+            } else {
+                bool found = false;
+                for (auto &t : activeTokens) {
+                    if (t.id == 'A' || t.id == 'B' || t.id == 'C') {
+                        glm::vec2 expectedCenter = t.actionPos + (log.soloGrabOffsetA + log.soloGrabOffsetB) * 0.5f;
+                        if (glm::distance(expectedCenter, center) < grabThreshold * 1.5f) {
+                            log.posA = t.actionPos + log.soloGrabOffsetA;
+                            log.posB = t.actionPos + log.soloGrabOffsetB;
+                            log.posA_prev = log.posA; 
+                            log.posB_prev = log.posB;
+                            found = true;
+                            log.grabLossFramesSolo = 0;
+                            break;
+                        }
+                    }
+                }
+                if (!found) {
+                    log.grabLossFramesSolo++;
+                    if (log.grabLossFramesSolo > 30) {
+                        log.grabbedSolo = false;
+                        log.grabLossFramesSolo = 0;
+                    }
+                }
             }
         }
     }
@@ -122,86 +230,88 @@ void ofApp::update(){
         
         glm::vec2 gravity(0, 800.0f); // Ground-directed gravity (Y is down)
 
-        // Verlet Integration for free endpoints
-        if (!grabbedA) {
-            glm::vec2 temp = posA;
-            posA += (posA - posA_prev) + gravity * dt * dt;
-            posA_prev = temp;
-        } else {
-            // Smoothly track current velocity to avoid huge kinetic energy on release
-            posA_prev = posA - (posA - posA_prev) * 0.4f;
-        }
+        for (auto &log : logs) {
+            if (log.isPlanted) continue;
 
-        if (!grabbedB) {
-            glm::vec2 temp = posB;
-            posB += (posB - posB_prev) + gravity * dt * dt;
-            posB_prev = temp;
-        } else {
-            posB_prev = posB - (posB - posB_prev) * 0.4f;
-        }
+            // Verlet Integration for free endpoints
+            bool isGrabbedA = log.grabbedA || log.grabbedSolo;
+            bool isGrabbedB = log.grabbedB || log.grabbedSolo;
 
-        // Ground Collision resolution
-        float bounce = 0.4f;
-        float friction = 0.85f;
-        if (posA.y > groundY) {
-            glm::vec2 vel = posA - posA_prev;
-            posA.y = groundY;
-            vel.y = -vel.y * bounce;
-            vel.x *= friction;
-            posA_prev = posA - vel;
-        }
-        if (posB.y > groundY) {
-            glm::vec2 vel = posB - posB_prev;
-            posB.y = groundY;
-            vel.y = -vel.y * bounce;
-            vel.x *= friction;
-            posB_prev = posB - vel;
-        }
+            if (!isGrabbedA) {
+                glm::vec2 temp = log.posA;
+                log.posA += (log.posA - log.posA_prev) + gravity * dt * dt;
+                log.posA_prev = temp;
+            } else {
+                log.posA_prev = log.posA - (log.posA - log.posA_prev) * 0.4f;
+            }
 
-        // Rigid length constraint relaxation (maintain logLength)
-        for (int step = 0; step < 4; ++step) {
-            glm::vec2 delta = posA - posB;
-            float currentDist = glm::length(delta);
-            if (currentDist > 0.001f) {
-                float diff = logLength - currentDist;
-                glm::vec2 offset = (delta / currentDist) * diff * 0.5f;
+            if (!isGrabbedB) {
+                glm::vec2 temp = log.posB;
+                log.posB += (log.posB - log.posB_prev) + gravity * dt * dt;
+                log.posB_prev = temp;
+            } else {
+                log.posB_prev = log.posB - (log.posB - log.posB_prev) * 0.4f;
+            }
 
-                if (!grabbedA && !grabbedB) {
-                    posA += offset;
-                    posB -= offset;
-                } else if (grabbedA) {
-                    // Endpoint A is fixed by player, offset goes entirely to B
-                    posB -= offset * 2.0f;
-                } else if (grabbedB) {
-                    // Endpoint B is fixed by player, offset goes entirely to A
-                    posA += offset * 2.0f;
+            // Ground Collision resolution
+            float bounce = 0.4f;
+            float friction = 0.85f;
+            if (log.posA.y > groundY) {
+                glm::vec2 vel = log.posA - log.posA_prev;
+                log.posA.y = groundY;
+                vel.y = -vel.y * bounce;
+                vel.x *= friction;
+                log.posA_prev = log.posA - vel;
+            }
+            if (log.posB.y > groundY) {
+                glm::vec2 vel = log.posB - log.posB_prev;
+                log.posB.y = groundY;
+                vel.y = -vel.y * bounce;
+                vel.x *= friction;
+                log.posB_prev = log.posB - vel;
+            }
+
+            // Rigid length constraint relaxation (maintain logLength)
+            for (int step = 0; step < 4; ++step) {
+                glm::vec2 delta = log.posA - log.posB;
+                float currentDist = glm::length(delta);
+                if (currentDist > 0.001f) {
+                    float diff = logLength - currentDist;
+                    glm::vec2 offset = (delta / currentDist) * diff * 0.5f;
+
+                    if (log.grabbedSolo) {
+                        // Skip relaxation, rigid body handles it
+                    } else if (!log.grabbedA && !log.grabbedB) {
+                        log.posA += offset;
+                        log.posB -= offset;
+                    } else if (log.grabbedA) {
+                        log.posB -= offset * 2.0f;
+                    } else if (log.grabbedB) {
+                        log.posA += offset * 2.0f;
+                    }
                 }
             }
         }
-
-        // --- Victory check ---
-        // Player must release the log, one end must stand in target field, vertical orientation
-        if (!grabbedA && !grabbedB) {
-            // Check if either end stands on the floor in the circle
-            glm::vec2 bottomEnd = (posA.y > posB.y) ? posA : posB;
-            glm::vec2 topEnd = (posA.y > posB.y) ? posB : posA;
-
-            bool onGround = (bottomEnd.y >= groundY - 5.0f);
-            float distToTarget = glm::distance(bottomEnd, targetPos);
-            bool inTarget = (distToTarget < targetRadius);
-
-            glm::vec2 logDir = glm::normalize(topEnd - bottomEnd);
-            bool isVertical = (logDir.y < -0.94f); // vertical angle close to -90 degrees (upwards)
-
-            // Velocity checks for stability
-            float speedA = glm::length(posA - posA_prev);
-            float speedB = glm::length(posB - posB_prev);
-            bool isStable = (speedA < 0.25f && speedB < 0.25f);
-
-            if (onGround && inTarget && isVertical && isStable) {
-                gameState = GAME_SUCCESS;
+        
+        // Update Sheep Placeholder (Static)
+    }
+    
+    // Clean up token offsets for tokens no longer on screen
+    for (auto it = tokenOffsets.begin(); it != tokenOffsets.end(); ) {
+        char id = it->first;
+        bool active = false;
+        for (auto &t : activeTokens) {
+            if (t.id == id) active = true;
+        }
+        if (!active) {
+            tokenTimeouts[id]++;
+            if (tokenTimeouts[id] > 30) { // roughly 0.5 seconds at 60fps
+                tokenTimeouts.erase(id);
+                it = tokenOffsets.erase(it);
+                continue;
             }
         }
+        ++it;
     }
 }
 
@@ -209,65 +319,126 @@ void ofApp::update(){
 void ofApp::draw(){
     ofSetLineWidth(1);
 
-    // 1. Draw Grid Ground
-    ofSetColor(80);
-    ofDrawLine(0, groundY, ofGetWidth(), groundY);
+    if (gameState == GAME_MENU) {
+        ofBackground(40, 50, 60);
+        ofSetColor(255);
+        ofDrawBitmapString("FENCE BUILDER", ofGetWidth()/2.0f - 50, ofGetHeight()/2.0f - 150);
+        ofDrawBitmapString("Select Game Mode to Start", ofGetWidth()/2.0f - 90, ofGetHeight()/2.0f - 120);
 
-    // 2. Draw Target Field (Green Circle flat on the floor)
-    ofNoFill();
-    ofSetLineWidth(3);
-    ofSetColor(0, 230, 110);
-    ofDrawCircle(targetPos, targetRadius);
-    ofFill();
-    ofSetColor(0, 230, 110, 40); // transparent fill
-    ofDrawCircle(targetPos, targetRadius);
+        float btnW = 300; float btnH = 100;
+        float btnX1 = ofGetWidth()/2.0f - btnW - 20.0f;
+        float btnX2 = ofGetWidth()/2.0f + 20.0f;
+        float btnY = ofGetHeight()/2.0f - btnH/2.0f;
 
-    // 3. Draw Log Line
-    if (gameState == GAME_SUCCESS) {
-        ofSetColor(50, 220, 100); // Bright green
-    } else if (grabbedA && grabbedB) {
-        ofSetColor(240, 130, 20); // Bright orange when fully grabbed
-    } else if (grabbedA || grabbedB) {
-        ofSetColor(210, 180, 50); // Muted gold when partially grabbed
-    } else {
-        ofSetColor(139, 90, 43); // Wood brown when free
+        ofSetColor(100, 200, 100);
+        ofDrawRectangle(btnX1, btnY, btnW, btnH);
+        ofSetColor(100, 100, 200);
+        ofDrawRectangle(btnX2, btnY, btnW, btnH);
+
+        ofSetColor(255);
+        ofDrawBitmapString("Mode 1: Co-Op", btnX1 + 100, btnY + 45);
+        ofDrawBitmapString("(2 Tokens per Log)", btnX1 + 80, btnY + 65);
+
+        ofDrawBitmapString("Mode 2: Solo", btnX2 + 100, btnY + 45);
+        ofDrawBitmapString("(1 Token per Log)", btnX2 + 80, btnY + 65);
+
+        // Draw active token action points so they can click buttons
+        for (auto &t : activeTokens) {
+            ofSetColor(255, 200, 50, 220); 
+            ofDrawCircle(t.actionPos, 15.0f);
+        }
+        return;
     }
-    
-    ofSetLineWidth(logRadius * 2);
-    ofDrawLine(posA, posB);
-    
-    ofSetLineWidth(1);
 
-    // 4. Draw Grabbing Spheres on ends (Visual aids)
-    ofNoFill();
-    ofSetLineWidth(2);
-    
-    // End A
-    ofSetColor(grabbedA ? ofColor::red : ofColor::lightGray);
-    ofDrawCircle(posA, grabbedA ? 15.0f : 8.0f);
-    
-    // End B
-    ofSetColor(grabbedB ? ofColor::red : ofColor::lightGray);
-    ofDrawCircle(posB, grabbedB ? 15.0f : 8.0f);
+    // 1. Draw Landscape
+    // Sky is background color. Draw Grass:
+    ofSetColor(34, 139, 34); // Forest green
+    ofDrawRectangle(0, groundY, ofGetWidth(), ofGetHeight() - groundY);
 
-    // 5. Draw active touchscreen/token projected coordinates in 2D space
+    // 2. Draw Sheep Placeholder
+    ofSetColor(255);
+    ofDrawCircle(sheepPos, 30.0f);
+    ofSetColor(0);
+    ofDrawBitmapString("SHEEP", sheepPos.x - 20, sheepPos.y);
+
+    // 3. Draw Logs
+    for (auto &log : logs) {
+        if (log.isPlanted) {
+            ofSetColor(101, 67, 33); // Darker wood brown for planted logs
+        } else if (log.grabbedA && log.grabbedB) {
+            ofSetColor(240, 130, 20); // Bright orange when fully grabbed
+        } else if (log.grabbedA || log.grabbedB) {
+            ofSetColor(210, 180, 50); // Muted gold when partially grabbed
+        } else {
+            ofSetColor(139, 90, 43); // Wood brown when free
+        }
+        
+        // Robust thick line drawing using geometry
+        glm::vec2 delta = log.posB - log.posA;
+        float dist = glm::length(delta);
+        float angle = atan2(delta.y, delta.x);
+
+        ofFill();
+        // Draw the main body as a rotated rectangle
+        ofPushMatrix();
+        ofTranslate(log.posA);
+        ofRotateZRad(angle);
+        ofDrawRectangle(0, -logRadius, dist, logRadius * 2.0f);
+        ofPopMatrix();
+        
+        // Draw rounded ends
+        ofDrawCircle(log.posA, logRadius);
+        ofDrawCircle(log.posB, logRadius);
+        
+        ofSetLineWidth(1);
+
+        // Draw Grabbing Spheres on ends (Visual aids) if not planted
+        if (!log.isPlanted) {
+            ofNoFill();
+            ofSetLineWidth(2);
+            
+            // End A
+            ofSetColor(log.grabbedA ? ofColor::red : ofColor::lightGray);
+            ofDrawCircle(log.posA, log.grabbedA ? 15.0f : 8.0f);
+            
+            // End B
+            ofSetColor(log.grabbedB ? ofColor::red : ofColor::lightGray);
+            ofDrawCircle(log.posB, log.grabbedB ? 15.0f : 8.0f);
+            ofFill();
+        }
+    }
+
+    // 4. Draw active touchscreen/token projected coordinates
     ofFill();
     for (auto &t : activeTokens) {
-        ofSetColor(255, 100, 100, 180);
+        if (t.id == 'D') {
+            ofSetColor(100, 100, 255, 200); // Blue for Hammer base
+        } else {
+            ofSetColor(255, 100, 100, 180);
+        }
         ofDrawCircle(t.worldPos, 12.0f);
+        
+        // Draw action area for ALL tokens
+        ofNoFill();
+        ofSetLineWidth(2);
+        ofSetColor(255, 200, 50, 220); // Yellow/Orange action circle
+        ofDrawCircle(t.actionPos, grabThreshold);
+        ofDrawLine(t.worldPos, t.actionPos); // Draw connecting line
+        ofFill();
         
         // Draw classified token ID
         string label = "Token: ";
         label += t.id;
         if (t.id == '?') label = "Finger/Unknown";
+        if (t.id == 'D') label += " (Hammer)";
         
-        ofSetColor(255);
+        ofSetColor(0);
         ofDrawBitmapString(label, t.worldPos.x + 15, t.worldPos.y + 15);
     }
 
     // --- 2D UI HUD Overlay ---
-    ofSetColor(255);
-    ofDrawBitmapString("Titulo Julian Colab - Log Lift & Place Game", 25, 40);
+    ofSetColor(0);
+    ofDrawBitmapString("Titulo Julian Colab - Fence Builder Game", 25, 40);
     
     int yOffset = 70;
     
@@ -291,31 +462,18 @@ void ofApp::draw(){
         for (auto &t : activeTokens) {
             string tokenInfo = "  - Token " + string(1, t.id);
             if (t.id == '?') tokenInfo = "  - Finger / Unknown '?'";
+            if (t.id == 'D') tokenInfo += " (Hammer)";
             ofDrawBitmapString(tokenInfo, 25, yOffset += 15);
         }
     }
 
-    yOffset += 10;
-    ofSetColor(grabbedA ? ofColor::green : ofColor::red);
-    ofDrawBitmapString("End A: " + string(grabbedA ? "GRABBED (Token A)" : "FREE (Needs Token A)"), 25, yOffset += 20);
-    ofSetColor(grabbedB ? ofColor::green : ofColor::red);
-    ofDrawBitmapString("End B: " + string(grabbedB ? "GRABBED (Token B/C)" : "FREE (Needs Token B/C)"), 25, yOffset += 20);
-    
     // Draw helper prompts
     yOffset += 40;
-    if (gameState == GAME_SUCCESS) {
-        ofSetColor(80, 255, 120);
-        ofDrawBitmapString("SUCCESS! Log placed upright in target field!", 25, yOffset);
-        ofSetColor(200);
-        ofDrawBitmapString("Press 'R' on keyboard to reset and play again.", 25, yOffset + 25);
-    } else {
-        ofSetColor(200);
-        ofDrawBitmapString("INSTRUCTIONS:", 25, yOffset);
-        ofDrawBitmapString("- Place Token A on End A (left) and Token B/C on End B (right) to lift it.", 25, yOffset + 20);
-        ofDrawBitmapString("- Move both tokens to carry it to the green target circle.", 25, yOffset + 35);
-        ofDrawBitmapString("- Let go of both tokens to stand the log upright in the center.", 25, yOffset + 50);
-        ofDrawBitmapString("- (Debug: Hold 'A' or 'C' key while dragging mouse to simulate tokens)", 25, yOffset + 65);
-    }
+    ofDrawBitmapString("INSTRUCTIONS:", 25, yOffset);
+    ofDrawBitmapString("- Grab logs with Tokens A (top) and B/C (bottom).", 25, yOffset + 20);
+    ofDrawBitmapString("- Stand logs upright, then use Token D (Hammer) on top to plant them.", 25, yOffset + 35);
+    ofDrawBitmapString("- Build a fence to keep the sheep in!", 25, yOffset + 50);
+    ofDrawBitmapString("- (Debug: Hold 'A', 'B', 'C', or 'D' key while dragging mouse to simulate tokens)", 25, yOffset + 65);
 }
 
 //--------------------------------------------------------------
@@ -323,16 +481,15 @@ void ofApp::keyPressed(int key){
     if (key == 'r' || key == 'R') {
         gameState = GAME_PLAYING;
         
-        // Start log lying flat on the left side
-        posA = glm::vec2(100.0f, groundY);
-        posB = glm::vec2(100.0f + logLength, groundY);
-        posA_prev = posA;
-        posB_prev = posB;
-        
-        grabbedA = false;
-        grabbedB = false;
-        grabberIdA = -1;
-        grabberIdB = -1;
+        logs.clear();
+        for (int i = 0; i < 2; ++i) {
+            FenceLog log;
+            log.posA = glm::vec2(100.0f + (i * 300.0f), groundY);
+            log.posB = glm::vec2(100.0f + (i * 300.0f) + logLength, groundY);
+            log.posA_prev = log.posA;
+            log.posB_prev = log.posB;
+            logs.push_back(log);
+        }
     }
 }
 
@@ -350,4 +507,3 @@ void ofApp::touchMoved(ofTouchEventArgs & touch){
 void ofApp::touchUp(ofTouchEventArgs & touch){
     nativeTouches.erase(touch.id);
 }
-
