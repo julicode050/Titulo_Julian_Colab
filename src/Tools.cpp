@@ -1,22 +1,22 @@
 #include "Tools.hpp"
 
 // ---------------- UTILS ----------------
+// Componentes conexas: dos puntos a menos de `threshold` quedan en el mismo grupo,
+// directa o transitivamente. El resultado no depende del orden de los puntos.
 std::vector<std::vector<ofVec2f>> clusterTouches(const std::vector<ofVec2f>& pts, float threshold) {
+    std::vector<int> parent(pts.size());
+    for (size_t i = 0; i < pts.size(); ++i) parent[i] = (int)i;
+    std::function<int(int)> find = [&](int x) { return parent[x] == x ? x : parent[x] = find(parent[x]); };
+
+    for (size_t i = 0; i < pts.size(); ++i)
+        for (size_t j = i + 1; j < pts.size(); ++j)
+            if (pts[i].distance(pts[j]) < threshold) parent[find((int)i)] = find((int)j);
+
+    std::map<int, std::vector<ofVec2f>> byRoot;
+    for (size_t i = 0; i < pts.size(); ++i) byRoot[find((int)i)].push_back(pts[i]);
+
     std::vector<std::vector<ofVec2f>> clusters;
-    for (const auto& p : pts) {
-        bool found = false;
-        for (auto& group : clusters) {
-            for (const auto& gp : group) {
-                if (p.distance(gp) < threshold) {
-                    group.push_back(p);
-                    found = true;
-                    break;
-                }
-            }
-            if (found) break;
-        }
-        if (!found) clusters.push_back({p});
-    }
+    for (auto& [root, group] : byRoot) clusters.push_back(group);
     return clusters;
 }
 

@@ -1,0 +1,81 @@
+{
+    "deteccion": {
+        "clusterThresholdPx": 150.0,
+        "joinConfirmFrames": 5,
+        "joinDistanceCm": 5.0,
+        "joinedMinPoints": 6,
+        "labelConfirmFrames": 10,
+        "separateConfirmFrames": 10,
+        "tokenGraceFrames": 15,
+        "tokenLetters": {
+            "A": "A",
+            "B": "BC"
+        },
+        "trackMaxJumpCm": 8.0
+    },
+    "ensamblaje": {
+        "assembleAnimSec": 1.2,
+        "edgeMarginCm": 3.5,
+        "figureRadiusCm": 4.5,
+        "fragmentsPerCycle": [
+            3,
+            3,
+            4,
+            4,
+            5,
+            5
+        ],
+        "minJoinedTokens": 2,
+        "pickupRadiusCm": 2.5,
+        "resultShowSec": 4.0,
+        "zoneRadiusCm": 6.0
+    },
+    "marea": {
+        "decayPerSec": 0.04,
+        "edgeMarginCm": 4.0,
+        "fusionDistanceCm": 8.0,
+        "fusionMinTokens": 4,
+        "highFillPerSec": 0.15,
+        "highScorePerSec": 4.0,
+        "holdRadiusCm": 3.5,
+        "lowFillPerSec": 0.05,
+        "lowScorePerSec": 1.0,
+        "maxActivePoints": 3,
+        "minSpawnDistanceCm": 5.0,
+        "pointLifetimeSec": 40.0,
+        "pointRadiusCm": 2.6,
+        "seed": 4321,
+        "sessionSec": 330.0,
+        "spawnMaxSec": 12.0,
+        "spawnMinSec": 6.0,
+        "startFill": 0.6
+    },
+    "menu": {
+        "dwellSec": 1.5
+    },
+    "pantalla": {
+        "pxPerCm": 36.5
+    },
+    "resonancia": {
+        "activationRadiusCm": 3.5,
+        "cycles": 7,
+        "doubleFillSec": 2.5,
+        "doublePhaseSec": 18.0,
+        "drainPerSec": 0.25,
+        "edgeMarginCm": 4.0,
+        "fillSec": 2.0,
+        "individualPhaseSec": 27.0,
+        "maxIndividualNodes": 3,
+        "minIndividualNodes": 2,
+        "nodeRadiusCm": 2.2,
+        "seed": 1234,
+        "spacingsCm": [
+            6.0,
+            14.0,
+            24.0
+        ]
+    },
+    "simulador": {
+        "tokenSideCm": 2.5
+    }
+}

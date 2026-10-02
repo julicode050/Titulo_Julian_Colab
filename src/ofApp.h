@@ -1,12 +1,14 @@
 #pragma once
+#include "Minigame.h"
+#include "Simulator.h"
 #include "Token.hpp"
-#include "Tools.hpp" // for clusterTouches
+#include "TokenTracker.h"
 #include "ofMain.h"
 #include <map>
+#include <memory>
 #include <vector>
 
-enum GameState { GAME_MENU, GAME_PLAYING, GAME_SUCCESS };
-enum GameMode { COOP_MODE, SOLO_MODE };
+enum AppState { APP_MENU, APP_PLAYING, APP_RESULTS };
 
 class ofApp : public ofBaseApp {
 public:
@@ -14,54 +16,40 @@ public:
 	void update() override;
 	void draw() override;
 	void keyPressed(int key) override;
+	void mousePressed(int x, int y, int button) override;
+	void mouseDragged(int x, int y, int button) override;
+	void mouseReleased(int x, int y, int button) override;
 
 	// Native Touch Event Callbacks
 	void touchDown(ofTouchEventArgs & touch) override;
 	void touchMoved(ofTouchEventArgs & touch) override;
 	void touchUp(ofTouchEventArgs & touch) override;
 
+private:
+	struct Button {
+		ofRectangle rect;
+		std::string label;
+		float dwell = 0; // segundos con un token encima
+	};
+
+	void startGame(int index);
+	void goToMenu();
+	void layoutButtons();
+	// Avanza la permanencia de tokens sobre los botones; devuelve el índice elegido o -1.
+	int updateDwell(std::vector<Button> & buttons, float dt);
+	void drawButtons(const std::vector<Button> & buttons);
+
 	// --- Input & Tracking ---
-	Token token; // Manages ofxTuio and touch lists
+	Token token; // recepción TUIO y clasificación de formas
 	std::map<int, ofVec2f> nativeTouches; // Maps touch ID to screen coords
+	TokenTracker tracker;
+	Simulator simulator;
 
-	// --- Physics & Logs State ---
-	struct FenceLog {
-		glm::vec2 posA, posA_prev; // Top end (End A, grabs with Token A)
-		glm::vec2 posB, posB_prev; // Bottom end (End B, grabs with Token B/C)
-		bool grabbedA = false;
-		bool grabbedB = false;
-		bool isPlanted = false;
-		int grabLossFramesA = 0;
-		int grabLossFramesB = 0;
-		// Solo mode properties
-		bool grabbedSolo = false;
-		int grabLossFramesSolo = 0;
-		glm::vec2 soloGrabOffsetA;
-		glm::vec2 soloGrabOffsetB;
-	};
-	std::vector<FenceLog> logs;
-
-	float logLength = 240.0f;
-	float logRadius = 30.0f;
-	float groundY = 0.0f;
-	float grabThreshold = 120.0f;
-
-	// --- Target & Gameplay ---
-	GameState gameState = GAME_MENU;
-	GameMode currentMode = COOP_MODE;
-
-	// Sheep Placeholder
-	glm::vec2 sheepPos;
-	glm::vec2 sheepVel;
-
-	// --- Active Tokens Classification ---
-	struct ActiveToken {
-		char id;
-		glm::vec2 worldPos;
-		glm::vec2 actionPos;
-		int clusterIdx;
-	};
-	std::vector<ActiveToken> activeTokens;
-	std::map<char, glm::vec2> tokenOffsets; // Tracks initial offset (X for grabbing, Y for hammer)
-	std::map<char, int> tokenTimeouts; // Tracks frames missing for each token
+	// --- Juegos ---
+	std::vector<std::unique_ptr<Minigame>> games;
+	int currentGame = -1;
+	AppState state = APP_MENU;
+	std::vector<Button> menuButtons;
+	std::vector<Button> resultButtons;
+	bool showDebug = false;
 };
