@@ -18,10 +18,11 @@ All values below live in `bin/data/settings.json` and can be changed without rec
 
 **Ensamblaje Progresivo**
 - [ ] Central zone is a **6 cm radius**. The brief's 25–30 cm radius doesn't fit a ~29.6 cm tall screen.
-- [ ] A token carries one fragment at a time. The fragment is **dropped when the token enters the zone and stays there floating loose, not assembled**. With only 2 tokens, players have to make several trips.
-- [ ] Fragments only fuse into the figure when all of them are in the zone **and** both tokens are joined inside it (`minJoinedTokens` = 2). (Changed 2026-10-03 after Julián's test: previously fragments snapped into place with a single token.)
+- [ ] A token carries one fragment at a time and **keeps carrying it inside the zone**. With only 2 tokens, players have to make several trips.
+- [ ] **One fragment is fixed per union:** when a token carrying a fragment is joined to another token inside the zone (`minJoinedTokens` = 2), that fragment is fixed into the figure. To fix the next one, the tokens must separate and join again. If both tokens carry a fragment, a union fixes only one. The figure completes when the last fragment is fixed.
+  - History: 2026-10-01 fragments snapped into place with a single token. 2026-10-03 (first fix) they were dropped loose on entering the zone and fused all at once on joining, but that broke the game: the fragment was released at the zone border and couldn't be picked up again. 2026-10-03 (current) one fragment per union, as Julián asked.
 - [ ] Any fragment fits any slot (no puzzle matching).
-- [ ] 💡 **Mechanic idea (not implemented):** to make the game more codependent, allow **only one loose fragment in the zone at a time**. Players drag one fragment into the zone, then connect their tokens to fuse it; repeat for each fragment.
+- [x] 💡 **Mechanic idea, implemented 2026-10-03 as "one fragment fixed per union"** (see above): players bring a fragment into the zone, then connect their tokens to fix it; repeat for each fragment.
 - [ ] A token already resting on a fragment when a cycle starts can't pick it up until it moves off it.
 - [ ] Success = **time per cycle**, shown after each figure. No time limit per cycle. 6 cycles with 3, 3, 4, 4, 5, 5 fragments, and a different shape each cycle.
 

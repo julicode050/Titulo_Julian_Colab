@@ -41,6 +41,7 @@ static glm::vec2 rayHit(const std::vector<glm::vec2> & poly, float a) {
 void Ensamblaje::start() {
 	cycle = 0;
 	cycleTimes.clear();
+	spentUnion.clear();
 	center = glm::vec2(ofGetWidth() * 0.5f, ofGetHeight() * 0.5f);
 	event("game_start");
 	startCycle();
@@ -98,16 +99,11 @@ void Ensamblaje::startCycle() {
 	event("cycle_start", "ciclo=" + ofToString(cycle + 1) + " fragmentos=" + ofToString(n));
 }
 
-bool Ensamblaje::zoneHasJoinedGroup(const TokenTracker & tracker) const {
+bool Ensamblaje::groupInZone(const TokenTracker & tracker, const TokenTracker::Group & g) const {
 	float zone = cm(settings().ensamblaje.zoneRadiusCm);
-	for (auto & g : tracker.getGroups()) {
-		if (g.size() < settings().ensamblaje.minJoinedTokens) continue;
-		bool allInside = true;
-		for (int uid : g.uids)
-			if (glm::distance(tracker.findToken(uid)->pos, center) > zone) allInside = false;
-		if (allInside) return true;
-	}
-	return false;
+	for (int uid : g.uids)
+		if (glm::distance(tracker.findToken(uid)->pos, center) > zone) return false;
+	return true;
 }
 
 void Ensamblaje::update(float dt, const TokenTracker & tracker) {
@@ -116,7 +112,6 @@ void Ensamblaje::update(float dt, const TokenTracker & tracker) {
 
 	if (phase == PLAYING) {
 		cycleTime += dt;
-		float zone = cm(s.zoneRadiusCm);
 
 		float pickup = cm(s.pickupRadiusCm);
 		for (auto & f : fragments) {
@@ -142,23 +137,14 @@ void Ensamblaje::update(float dt, const TokenTracker & tracker) {
 				if (f.carrier == t.uid) carried = &f;
 
 			if (carried) {
+				// El fragmento sigue al token, también dentro de la zona.
 				carried->pos = t.pos;
-				if (glm::distance(t.pos, center) < zone) {
-					// Queda suelto dentro de la zona, cerca de donde entró; no se arma todavía.
-					glm::vec2 dir = t.pos - center;
-					float a = (glm::length(dir) > 1 ? atan2(dir.y, dir.x) : ofRandom(TWO_PI)) + ofRandom(-0.4f, 0.4f);
-					carried->loosePos = center + glm::vec2(cos(a), sin(a)) * zone * 0.6f;
-					carried->bobPhase = ofRandom(TWO_PI);
-					carried->deposited = true;
-					carried->carrier = -1;
-					event("fragment_deposited", "token=" + ofToString(t.uid));
-				}
 			} else {
 				// Recoger el fragmento libre más cercano dentro del radio.
 				Fragment * nearest = nullptr;
 				float best = pickup;
 				for (auto & f : fragments) {
-					if (f.deposited || f.carrier >= 0 || f.blocked.count(t.uid)) continue;
+					if (f.fixed || f.carrier >= 0 || f.blocked.count(t.uid)) continue;
 					float d = glm::distance(f.pos, t.pos);
 					if (d < best) {
 						best = d;
@@ -172,12 +158,45 @@ void Ensamblaje::update(float dt, const TokenTracker & tracker) {
 			}
 		}
 
-		// Los fragmentos depositados flotan sueltos; solo se arman al unirse los tokens (ASSEMBLING).
-		for (auto & f : fragments)
-			if (f.deposited) f.pos = glm::mix(f.pos, f.loosePos, 1.0f - exp(-dt * 4.0f));
+		// Una unión ya usada se libera cuando sus tokens se separan.
+		for (auto it = spentUnion.begin(); it != spentUnion.end();) {
+			int g = tracker.groupIndexOf(*it);
+			if (g < 0 || !tracker.getGroups()[g].isJoined())
+				it = spentUnion.erase(it);
+			else
+				++it;
+		}
 
-		bool allIn = std::all_of(fragments.begin(), fragments.end(), [](auto & f) { return f.deposited; });
-		if (allIn && zoneHasJoinedGroup(tracker)) {
+		// Un fragmento fijado por unión: grupo unido dentro de la zona que lleva un fragmento.
+		for (auto & g : tracker.getGroups()) {
+			if (g.size() < s.minJoinedTokens || !groupInZone(tracker, g)) continue;
+			bool spent = false;
+			for (int uid : g.uids)
+				if (spentUnion.count(uid)) spent = true;
+			if (spent) continue;
+
+			Fragment * toFix = nullptr;
+			for (auto & f : fragments)
+				for (int uid : g.uids)
+					if (!toFix && f.carrier == uid) toFix = &f;
+			if (!toFix) continue;
+
+			int carrier = toFix->carrier;
+			toFix->fixed = true;
+			toFix->carrier = -1;
+			toFix->fixedAt = ofGetElapsedTimef();
+			for (int uid : g.uids)
+				spentUnion.insert(uid);
+			int remaining = (int)std::count_if(fragments.begin(), fragments.end(), [](auto & f) { return !f.fixed; });
+			event("fragment_fixed", "token=" + ofToString(carrier) + " restantes=" + ofToString(remaining));
+		}
+
+		// Los fragmentos fijados se deslizan a su lugar en la figura.
+		for (auto & f : fragments)
+			if (f.fixed) f.pos = glm::mix(f.pos, f.slot, 1.0f - exp(-dt * 8.0f));
+
+		bool allFixed = std::all_of(fragments.begin(), fragments.end(), [](auto & f) { return f.fixed; });
+		if (allFixed) {
 			cycleTimes.push_back(cycleTime);
 			event("figure_completed", "ciclo=" + ofToString(cycle + 1) + " segundos=" + ofToString(cycleTime, 1));
 			phase = ASSEMBLING;
@@ -241,14 +260,16 @@ void Ensamblaje::draw(const TokenTracker & tracker) {
 			drawPolygon(f.shape, f.pos, false);
 			ofSetColor(Ui::accent, 220);
 			drawPolygon(f.shape, f.pos, true);
-		} else if (f.deposited) {
-			// Suelto en la zona: flota levemente, translúcido, esperando la unión
-			glm::vec2 bob(0, sin(t * 1.5f + f.bobPhase) * cm(0.15f));
-			ofSetColor(Ui::accent, 110);
-			drawPolygon(f.shape, f.pos + bob, true);
-			ofSetLineWidth(2);
-			ofSetColor(Ui::accent, 200);
-			drawPolygon(f.shape, f.pos + bob, false);
+		} else if (f.fixed) {
+			// Fijado en la figura, con un destello breve al fijarse
+			float k = ofClamp((t - f.fixedAt) / 0.6f, 0, 1);
+			ofSetColor(Ui::accentJoined.getLerped(ofColor::white, (1 - k) * 0.7f));
+			drawPolygon(f.shape, f.pos, true);
+			if (k < 1) {
+				ofSetLineWidth(4);
+				ofSetColor(255, 255 * (1 - k));
+				drawPolygon(f.shape, f.pos, false);
+			}
 		} else {
 			ofSetColor(Ui::neutral, 200);
 			drawPolygon(f.shape, f.pos, true);
