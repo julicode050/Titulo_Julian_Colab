@@ -125,6 +125,7 @@ void TokenTracker::matchObservations(std::vector<Observation> & obs) {
 		tok.pos = o.pos;
 		tok.points = o.points;
 		tok.mergeId = o.mergeId;
+		tok.rawLetter = o.letter;
 		tok.visible = true;
 		tok.missingFrames = 0;
 
@@ -177,6 +178,7 @@ void TokenTracker::matchObservations(std::vector<Observation> & obs) {
 		tok.pos = obs[o].pos;
 		tok.points = obs[o].points;
 		tok.mergeId = obs[o].mergeId;
+		tok.rawLetter = obs[o].letter;
 		tokens.push_back(tok);
 		emit(TokenEventArgs::ADDED, tokens.back());
 	}

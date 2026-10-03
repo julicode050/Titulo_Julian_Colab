@@ -58,6 +58,7 @@ void ofApp::update() {
 	auto simPts = simulator.getPoints();
 	pts.insert(pts.end(), simPts.begin(), simPts.end());
 
+	contactCount = pts.size();
 	tracker.update(pts);
 
 	if (state == APP_MENU) {
@@ -121,12 +122,59 @@ void ofApp::draw() {
 
 	if (showDebug) {
 		tracker.drawDebug();
-		ofSetColor(255);
-		int y = 30;
-		ofDrawBitmapString("FPS " + ofToString(ofGetFrameRate(), 0), 20, y += 15);
-		ofDrawBitmapString("Tokens " + ofToString(tracker.getTokens().size()) + "  Grupos " + ofToString(tracker.getGroups().size()), 20, y += 15);
-		ofDrawBitmapString("1/2/3 juego | M menu | R reiniciar | S simulador | D debug | F pantalla completa", 20, y += 15);
+		drawDebugPanel();
 	}
+}
+
+void ofApp::drawDebugPanel() {
+	// Texto solo ASCII: la fuente bitmap no tiene tildes.
+	std::vector<std::string> lines;
+	std::string screen = state == APP_MENU ? "Menu"
+		: state == APP_PLAYING              ? "Jugando: " + games[currentGame]->id()
+											: "Resultados: " + games[currentGame]->id();
+	lines.push_back("DEBUG (D para ocultar)");
+	lines.push_back("FPS " + ofToString(ofGetFrameRate(), 0) + "  |  " + screen);
+	lines.push_back("Contactos: " + ofToString(contactCount) + "  |  Dedos/sueltos: " + ofToString(tracker.getFingers().size())
+		+ "  |  Simulador: " + (simulator.active ? "ON" : "off"));
+	lines.push_back("");
+
+	auto & tokens = tracker.getTokens();
+	lines.push_back("Tokens detectados: " + ofToString(tokens.size()));
+	if (tokens.empty()) lines.push_back("  (ninguno)");
+	for (auto & t : tokens) {
+		std::string line = "  " + t.label + " #" + ofToString(t.uid)
+			+ "  forma '" + std::string(1, t.rawLetter) + "'"
+			+ "  " + ofToString(t.points.size()) + " pts"
+			+ "  (" + ofToString(t.pos.x / settings().pxPerCm, 1) + ", " + ofToString(t.pos.y / settings().pxPerCm, 1) + ") cm";
+		if (!t.visible) line += "  [perdido " + ofToString(t.missingFrames) + " frames]";
+
+		int g = tracker.groupIndexOf(t.uid);
+		if (g >= 0 && tracker.getGroups()[g].isJoined()) {
+			std::string others;
+			for (int uid : tracker.getGroups()[g].uids) {
+				if (uid == t.uid) continue;
+				auto * o = tracker.findToken(uid);
+				others += (others.empty() ? "" : ", ") + o->label + "#" + ofToString(uid);
+			}
+			line += "  UNIDO con " + others;
+		}
+		lines.push_back(line);
+	}
+
+	int joined = 0;
+	for (auto & g : tracker.getGroups())
+		if (g.isJoined()) joined++;
+	lines.push_back("Grupos unidos: " + ofToString(joined));
+	lines.push_back("");
+	lines.push_back("1/2/3 juego | M menu | R reiniciar | S simulador | D debug | F pantalla completa");
+
+	ofPushStyle();
+	int y = 24;
+	for (auto & l : lines) {
+		if (!l.empty()) ofDrawBitmapStringHighlight(l, 16, y, ofColor(0, 0, 0, 180), ofColor(255));
+		y += 18;
+	}
+	ofPopStyle();
 }
 
 void ofApp::drawButtons(const std::vector<Button> & buttons) {

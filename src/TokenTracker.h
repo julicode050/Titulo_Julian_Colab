@@ -16,6 +16,7 @@ public:
 	struct TrackedToken {
 		int uid = -1;
 		std::string label; // etiqueta del token físico ("A", "B") o la letra cruda si no está mapeada
+		char rawLetter = '?'; // letra que devolvió classifyShape en el último frame
 		glm::vec2 pos; // centroide en px
 		bool visible = true; // false mientras está en periodo de gracia
 		int missingFrames = 0;

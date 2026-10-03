@@ -3,9 +3,9 @@
 
 // Ensamblaje Progresivo
 // Cada ciclo muestra una figura en el centro, dividida en N fragmentos dispersos cerca
-// de los bordes. Un token recoge un fragmento al tocarlo y lo deja al entrar en la zona
-// central. Con todos los fragmentos en la zona, los tokens deben unirse dentro de ella
-// para completar la figura.
+// de los bordes. Un token recoge un fragmento al tocarlo y lo suelta al entrar en la zona
+// central, donde queda flotando suelto (sin armarse). Con todos los fragmentos en la zona,
+// los tokens deben unirse dentro de ella: solo entonces los fragmentos se fusionan en la figura.
 class Ensamblaje : public Minigame {
 public:
 	std::string id() const override { return "ensamblaje"; }
@@ -24,6 +24,8 @@ private:
 		glm::vec2 pos;
 		int carrier = -1; // uid del token que lo lleva
 		bool deposited = false;
+		glm::vec2 loosePos; // dónde queda flotando en la zona hasta que los tokens se unen
+		float bobPhase = 0;
 		// Tokens que ya estaban encima al aparecer el fragmento: no pueden recogerlo
 		// hasta salir de su radio (evita recoger sin intención).
 		std::set<int> blocked;

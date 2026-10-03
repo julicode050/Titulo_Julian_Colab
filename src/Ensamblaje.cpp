@@ -144,6 +144,11 @@ void Ensamblaje::update(float dt, const TokenTracker & tracker) {
 			if (carried) {
 				carried->pos = t.pos;
 				if (glm::distance(t.pos, center) < zone) {
+					// Queda suelto dentro de la zona, cerca de donde entró; no se arma todavía.
+					glm::vec2 dir = t.pos - center;
+					float a = (glm::length(dir) > 1 ? atan2(dir.y, dir.x) : ofRandom(TWO_PI)) + ofRandom(-0.4f, 0.4f);
+					carried->loosePos = center + glm::vec2(cos(a), sin(a)) * zone * 0.6f;
+					carried->bobPhase = ofRandom(TWO_PI);
 					carried->deposited = true;
 					carried->carrier = -1;
 					event("fragment_deposited", "token=" + ofToString(t.uid));
@@ -167,9 +172,9 @@ void Ensamblaje::update(float dt, const TokenTracker & tracker) {
 			}
 		}
 
-		// Los fragmentos depositados se deslizan a su lugar en la figura.
+		// Los fragmentos depositados flotan sueltos; solo se arman al unirse los tokens (ASSEMBLING).
 		for (auto & f : fragments)
-			if (f.deposited) f.pos = glm::mix(f.pos, f.slot, 1.0f - exp(-dt * 6.0f));
+			if (f.deposited) f.pos = glm::mix(f.pos, f.loosePos, 1.0f - exp(-dt * 4.0f));
 
 		bool allIn = std::all_of(fragments.begin(), fragments.end(), [](auto & f) { return f.deposited; });
 		if (allIn && zoneHasJoinedGroup(tracker)) {
@@ -237,8 +242,13 @@ void Ensamblaje::draw(const TokenTracker & tracker) {
 			ofSetColor(Ui::accent, 220);
 			drawPolygon(f.shape, f.pos, true);
 		} else if (f.deposited) {
-			ofSetColor(Ui::accent, 140);
-			drawPolygon(f.shape, f.pos, true);
+			// Suelto en la zona: flota levemente, translúcido, esperando la unión
+			glm::vec2 bob(0, sin(t * 1.5f + f.bobPhase) * cm(0.15f));
+			ofSetColor(Ui::accent, 110);
+			drawPolygon(f.shape, f.pos + bob, true);
+			ofSetLineWidth(2);
+			ofSetColor(Ui::accent, 200);
+			drawPolygon(f.shape, f.pos + bob, false);
 		} else {
 			ofSetColor(Ui::neutral, 200);
 			drawPolygon(f.shape, f.pos, true);

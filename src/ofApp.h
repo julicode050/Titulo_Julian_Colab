@@ -38,6 +38,7 @@ private:
 	// Avanza la permanencia de tokens sobre los botones; devuelve el índice elegido o -1.
 	int updateDwell(std::vector<Button> & buttons, float dt);
 	void drawButtons(const std::vector<Button> & buttons);
+	void drawDebugPanel();
 
 	// --- Input & Tracking ---
 	Token token; // recepción TUIO y clasificación de formas
@@ -51,5 +52,6 @@ private:
 	AppState state = APP_MENU;
 	std::vector<Button> menuButtons;
 	std::vector<Button> resultButtons;
-	bool showDebug = false;
+	bool showDebug = true;
+	size_t contactCount = 0; // puntos de contacto crudos del último frame
 };

@@ -18,9 +18,10 @@ All values below live in `bin/data/settings.json` and can be changed without rec
 
 **Ensamblaje Progresivo**
 - [ ] Central zone is a **6 cm radius**. The brief's 25–30 cm radius doesn't fit a ~29.6 cm tall screen.
-- [ ] A token carries one fragment at a time. The fragment is **dropped automatically when the token enters the zone**. With only 2 tokens, players have to make several trips.
-- [ ] The figure completes when all fragments are in **and** both tokens are joined inside the zone (`minJoinedTokens` = 2).
+- [ ] A token carries one fragment at a time. The fragment is **dropped when the token enters the zone and stays there floating loose, not assembled**. With only 2 tokens, players have to make several trips.
+- [ ] Fragments only fuse into the figure when all of them are in the zone **and** both tokens are joined inside it (`minJoinedTokens` = 2). (Changed 2026-10-03 after Julián's test: previously fragments snapped into place with a single token.)
 - [ ] Any fragment fits any slot (no puzzle matching).
+- [ ] 💡 **Mechanic idea (not implemented):** to make the game more codependent, allow **only one loose fragment in the zone at a time**. Players drag one fragment into the zone, then connect their tokens to fuse it; repeat for each fragment.
 - [ ] A token already resting on a fragment when a cycle starts can't pick it up until it moves off it.
 - [ ] Success = **time per cycle**, shown after each figure. No time limit per cycle. 6 cycles with 3, 3, 4, 4, 5, 5 fragments, and a different shape each cycle.
 
