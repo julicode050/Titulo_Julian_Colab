@@ -47,7 +47,33 @@ All values below live in `bin/data/settings.json` and can be changed without rec
 ## 4. Optional: screen measurements
 - [ ] If spatial values feel off, measure the **visible display area** precisely (or share the ViewSonic model number). Scale is currently `pxPerCm` = 36.5, from 1080 px / 29.6 cm. The measured 50.3 cm width doesn't match a 16:9 panel of that height (~52.7 cm).
 
-## 5. Later
+## 5. Open issues from the progress report (2026-10-03)
+
+**Testing**
+- [ ] Systematic testing of all three games on the table with the physical tokens. So far: automated runs in the desktop simulator and Julián's preliminary solo bodystorming.
+- [ ] Bodystorming with two people.
+
+**Detection (unresolved limitations)**
+- [ ] The software can't tell "interlocked" from "very close" (see section 1). This is resolved by the new tokens.
+- [ ] Splitting a merged cluster into its tokens assumes **3 contact points per token**. If the new tokens use a different number of contacts, this assumption must be adjusted.
+
+**Research workflow**
+- [ ] There's no time reference on screen to sync the game with the session video. The brief asks to point to specific moments in the interview. Consider a small session clock, or rely on automatic logging once it exists.
+
+**Ensamblaje Progresivo**
+- [ ] Calibrate the pickup radius (2.5 cm) and figure size (4.5 cm radius), along with the zone radius above.
+- [ ] Fragment positions use **no fixed seed** (unlike Resonancia and Marea), so every session differs. Consider seeding them to make sessions comparable.
+
+**Resonancia Dividida**
+- [ ] The session lasts ~5.3 min, slightly under the brief's 6–7 min. Raise `cycles` (e.g. to 8) if needed.
+
+**Marea de Presión**
+- [ ] Calibrate the exact visual difference between low and high mode (currently colour, ring thickness and pulse speed).
+
+**Tooling**
+- [ ] The Xcode project (`Titulo3D.xcodeproj`) doesn't include the new source files. Build with `make`, or regenerate the Xcode project if needed.
+
+## 6. Later
 - [ ] Confirm the final number of tokens (2 for now, one per person).
 - [ ] Automatic event logging (CSV/JSON). Out of scope this sprint, so Julián logs manually. The code is ready: listen to `Events::token()` and `Events::game()` in `src/Events.h`.
 - [ ] Scaling to 4 people (out of scope this sprint).
