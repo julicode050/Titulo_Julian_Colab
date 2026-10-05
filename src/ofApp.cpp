@@ -124,6 +124,35 @@ void ofApp::draw() {
 		tracker.drawDebug();
 		drawDebugPanel();
 	}
+	if (showInstructions) drawInstructionsPanel();
+}
+
+void ofApp::drawInstructionsPanel() {
+	std::vector<std::string> lines;
+	if (state == APP_MENU || currentGame < 0) {
+		lines = { "INSTRUCCIONES (I para ocultar)", "",
+			"Elige un minijuego para ver sus instrucciones:",
+			"teclas 1/2/3, clic, o un token 1,5 s sobre el botón." };
+	} else {
+		lines = games[currentGame]->instructions();
+		lines.insert(lines.begin(), { games[currentGame]->title() + "  (I para ocultar)", "" });
+	}
+
+	float pad = 14, lineH = 22, width = 0;
+	for (auto & l : lines)
+		width = std::max(width, Ui::textWidth(l));
+	float x = ofGetWidth() - width - pad * 2 - 16;
+	float y = 16;
+
+	ofPushStyle();
+	ofFill();
+	ofSetColor(0, 0, 0, 225);
+	ofDrawRectRounded(x, y, width + pad * 2, lines.size() * lineH + pad * 1.5f, 6);
+	for (size_t i = 0; i < lines.size(); ++i) {
+		ofSetColor(i == 0 ? Ui::accent : ofColor(235));
+		Ui::textLeft(lines[i], x + pad, y + pad + 12 + i * lineH);
+	}
+	ofPopStyle();
 }
 
 void ofApp::drawDebugPanel() {
@@ -166,7 +195,7 @@ void ofApp::drawDebugPanel() {
 		if (g.isJoined()) joined++;
 	lines.push_back("Grupos unidos: " + ofToString(joined));
 	lines.push_back("");
-	lines.push_back("1/2/3 juego | M menu | R reiniciar | S simulador | D debug | F pantalla completa");
+	lines.push_back("1/2/3 juego | M menu | R reiniciar | S simulador | I instrucciones | F pantalla completa");
 
 	ofPushStyle();
 	int y = 24;
@@ -217,6 +246,10 @@ void ofApp::keyPressed(int key) {
 	case 's':
 	case 'S':
 		simulator.active = !simulator.active;
+		break;
+	case 'i':
+	case 'I':
+		showInstructions = !showInstructions;
 		break;
 	case 'd':
 	case 'D':

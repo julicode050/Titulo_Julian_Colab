@@ -96,3 +96,7 @@ Formato: `### AAAA-MM-DD · Título` y luego **Decisión**, **Motivo** y, cuando
 ### 2026-10-04 · Calce por rotación queda como opción futura
 **Decisión:** no implementar por ahora el calce por rotación de la pieza. Queda anotado en `PENDING.md`.
 **Motivo:** el token A (triángulo equilátero) no permite distinguir su rotación en pasos de 120°, y los tokens unidos giran juntos. Se reevaluará con los nuevos tokens.
+
+### 2026-10-04 · Panel de instrucciones (tecla I)
+**Decisión:** con la tecla I se muestra arriba a la derecha el objetivo, la mecánica y la condición para ganar del minijuego en curso. Empieza oculto. El texto se arma con los valores actuales de `settings.json`, así no queda desactualizado al calibrar. La línea de atajos del panel de debug ya no repite "debug".
+**Motivo:** pedido de Julián para las pruebas. Es una ayuda para el investigador; el brief pide evitar instrucciones largas para los participantes, por eso empieza oculto.

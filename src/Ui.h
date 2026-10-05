@@ -6,6 +6,9 @@ namespace Ui {
 void setup();
 // Texto centrado en (x, y). size: 0 = pequeño, 1 = mediano, 2 = grande
 void text(const std::string & s, float x, float y, int size = 1);
+// Texto alineado a la izquierda, con (x, y) en la línea base.
+void textLeft(const std::string & s, float x, float y, int size = 0);
+float textWidth(const std::string & s, int size = 0);
 // Anillo de progreso (0..1) empezando arriba, en sentido horario.
 void ring(const glm::vec2 & c, float radius, float progress, float thickness);
 // Barra horizontal de tiempo restante en el borde superior.

@@ -184,3 +184,18 @@ void Marea::drawResults() {
 	Ui::text("Modo individual   " + ofToString(low), cx, y + cm(3), 1);
 	Ui::text("Modo unido   " + ofToString(high), cx, y + cm(4.5f), 1);
 }
+
+std::vector<std::string> Marea::instructions() const {
+	auto & s = settings().marea;
+	return {
+		"OBJETIVO: sumar puntaje sosteniendo puntos de presión.",
+		"",
+		"- Los puntos aparecen de a poco (máx. " + ofToString(s.maxActivePoints) + " a la vez) y se vacían solos.",
+		"- 1 token sobre un punto: modo bajo, llena lento (" + num(s.lowScorePerSec) + " pt/s).",
+		"- 2 tokens UNIDOS sobre un punto: modo alto, llena rápido (" + num(s.highScorePerSec) + " pts/s).",
+		"- Un punto desaparece al vaciarse o a los " + num(s.pointLifetimeSec) + " s.",
+		"",
+		"GANAR: puntaje total al terminar (" + num(s.sessionSec / 60.0f) + " min),",
+		"separado en modo individual y modo unido.",
+	};
+}

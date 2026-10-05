@@ -39,6 +39,7 @@ private:
 	int updateDwell(std::vector<Button> & buttons, float dt);
 	void drawButtons(const std::vector<Button> & buttons);
 	void drawDebugPanel();
+	void drawInstructionsPanel();
 
 	// --- Input & Tracking ---
 	Token token; // recepción TUIO y clasificación de formas
@@ -53,5 +54,6 @@ private:
 	std::vector<Button> menuButtons;
 	std::vector<Button> resultButtons;
 	bool showDebug = true;
+	bool showInstructions = false;
 	size_t contactCount = 0; // puntos de contacto crudos del último frame
 };

@@ -17,6 +17,9 @@ public:
 	virtual void draw(const TokenTracker & tracker) = 0;
 	virtual bool isFinished() const = 0;
 	virtual void drawResults() = 0;
+	// Instrucciones y condición de victoria (panel "I"). Si cambian las reglas del juego,
+	// actualizar este texto también.
+	virtual std::vector<std::string> instructions() const = 0;
 
 	// Dibuja cada token (o grupo unido) con un marcador simple.
 	static void drawTokens(const TokenTracker & tracker) {
@@ -43,4 +46,10 @@ protected:
 		Events::notifyGame(id(), name, detail);
 	}
 	static float cm(float v) { return settings().cm(v); }
+	// Número para texto en español: sin decimales si es entero, si no con coma ("2,5").
+	static std::string num(float v) {
+		std::string s = ofToString(v, v == std::floor(v) ? 0 : 1);
+		std::replace(s.begin(), s.end(), '.', ',');
+		return s;
+	}
 };

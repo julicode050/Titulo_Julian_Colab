@@ -175,3 +175,23 @@ void Resonancia::drawResults() {
 	Ui::text("Individuales   " + ofToString(individualDone) + " de " + ofToString(individualTotal), cx, y + cm(3), 1);
 	Ui::text("Dobles   " + ofToString(doubleDone) + " de " + ofToString(doubleTotal), cx, y + cm(4.5f), 1);
 }
+
+std::vector<std::string> Resonancia::instructions() const {
+	auto & s = settings().resonancia;
+	float minutes = s.cycles * (s.individualPhaseSec + s.doublePhaseSec) / 60.0f;
+	return {
+		"OBJETIVO: activar la mayor cantidad de nodos.",
+		"",
+		"- Fase individual (barra naranja, " + num(s.individualPhaseSec) + " s): "
+			+ ofToString(s.minIndividualNodes) + "-" + ofToString(s.maxIndividualNodes) + " nodos de anillo simple.",
+		"  Se activan con 1 token encima durante " + num(s.fillSec) + " s.",
+		"- Fase doble (barra turquesa, " + num(s.doublePhaseSec) + " s): 1 nodo de anillo doble al centro.",
+		"  Se activa con los 2 tokens UNIDOS encima durante " + num(s.doubleFillSec) + " s.",
+		"- El nodo se llena mientras hay un token encima y se vacía",
+		"  de a poco si se retira.",
+		"- La distancia entre nodos individuales cambia en cada ciclo.",
+		"",
+		"GANAR: activar nodos; se cuentan individuales y dobles.",
+		ofToString(s.cycles) + " ciclos, unos " + num(std::round(minutes * 10) / 10) + " min.",
+	};
+}

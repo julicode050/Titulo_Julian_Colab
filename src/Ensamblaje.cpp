@@ -393,3 +393,25 @@ void Ensamblaje::drawResults() {
 	Ui::text("Total " + ofToString(t / 60) + ":" + ofToString(t % 60, 2, '0'), cx,
 		y + cm(3.5f) + cycleTimes.size() * cm(1.4f), 1);
 }
+
+std::vector<std::string> Ensamblaje::instructions() const {
+	auto & s = settings().ensamblaje;
+	auto & frag = s.fragmentsPerCycle;
+	int lo = frag.empty() ? 0 : *std::min_element(frag.begin(), frag.end());
+	int hi = frag.empty() ? 0 : *std::max_element(frag.begin(), frag.end());
+	return {
+		"OBJETIVO: armar la figura del centro con sus piezas.",
+		"",
+		"- Toca una pieza con tu token para recogerla (una pieza por token).",
+		"- Cada pieza calza en un solo lugar de la figura.",
+		"- Con la pieza sobre su lugar, unan los dos tokens: la pieza se fija.",
+		"- Lugar incorrecto: la pieza tiembla en rojo. Sin separarse,",
+		"  pueden deslizarla hasta el lugar correcto.",
+		"- Una pieza por unión: separen y vuelvan a unir los tokens",
+		"  para fijar la siguiente.",
+		"",
+		"GANAR: completar la figura. Se mide el tiempo de cada una.",
+		ofToString(frag.size()) + " figuras, de " + ofToString(lo) + " a " + ofToString(hi)
+			+ " piezas. Los contornos de guía se van borrando.",
+	};
+}

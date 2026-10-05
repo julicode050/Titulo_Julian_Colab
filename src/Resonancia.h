@@ -16,6 +16,7 @@ public:
 	void draw(const TokenTracker & tracker) override;
 	bool isFinished() const override { return phase == FINISHED; }
 	void drawResults() override;
+	std::vector<std::string> instructions() const override;
 
 private:
 	enum Phase { INDIVIDUAL, DOUBLE, FINISHED };

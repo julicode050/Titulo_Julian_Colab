@@ -16,6 +16,7 @@ public:
 	void draw(const TokenTracker & tracker) override;
 	bool isFinished() const override { return finished; }
 	void drawResults() override;
+	std::vector<std::string> instructions() const override;
 
 private:
 	enum Mode { NONE, LOW, HIGH };
