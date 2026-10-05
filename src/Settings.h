@@ -7,7 +7,7 @@
 // Las distancias de juego están en cm; las de detección en px (valores ya validados en hardware).
 struct Settings {
 	// --- Pantalla ---
-	float pxPerCm = 36.5f; // 1080 px / ~29.6 cm de alto (ViewSonic ~60 cm diagonal)
+	float pxPerCm = 36.43f; // ViewSonic TD2455: pixel pitch 0,2745 mm, área visible 527 x 296,5 mm
 
 	// --- Detección ---
 	float clusterThresholdPx = 150.0f; // puntos más cercanos que esto pertenecen al mismo grupo
@@ -28,10 +28,13 @@ struct Settings {
 	// --- Ensamblaje Progresivo ---
 	struct {
 		std::vector<int> fragmentsPerCycle = { 3, 3, 4, 4, 5, 5 };
-		float zoneRadiusCm = 6.0f;
+		float zoneRadiusCm = 10.5f;
 		float pickupRadiusCm = 2.5f;
-		int minJoinedTokens = 2; // tokens unidos que deben estar en la zona para completar
-		float figureRadiusCm = 4.5f;
+		int minJoinedTokens = 2; // tokens unidos que deben estar en la zona para fijar un fragmento
+		float figureRadiusCm = 8.5f;
+		float matchMaxDistCm = 3.5f; // distancia máxima del token a su lugar para fijar el fragmento
+		// Opacidad de los contornos de cada lugar, por ciclo (1 = visible, 0 = solo la silueta).
+		std::vector<float> slotOutlineAlpha = { 1.0f, 1.0f, 0.6f, 0.3f, 0.0f, 0.0f };
 		float edgeMarginCm = 3.5f;
 		float assembleAnimSec = 1.2f;
 		float resultShowSec = 4.0f;

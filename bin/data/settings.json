@@ -16,7 +16,7 @@
     "ensamblaje": {
         "assembleAnimSec": 1.2,
         "edgeMarginCm": 3.5,
-        "figureRadiusCm": 4.5,
+        "figureRadiusCm": 8.5,
         "fragmentsPerCycle": [
             3,
             3,
@@ -25,10 +25,19 @@
             5,
             5
         ],
+        "matchMaxDistCm": 3.5,
         "minJoinedTokens": 2,
         "pickupRadiusCm": 2.5,
         "resultShowSec": 4.0,
-        "zoneRadiusCm": 6.0
+        "slotOutlineAlpha": [
+            1.0,
+            1.0,
+            0.6,
+            0.3,
+            0.0,
+            0.0
+        ],
+        "zoneRadiusCm": 10.5
     },
     "marea": {
         "decayPerSec": 0.04,
@@ -54,7 +63,7 @@
         "dwellSec": 1.5
     },
     "pantalla": {
-        "pxPerCm": 36.5
+        "pxPerCm": 36.43
     },
     "resonancia": {
         "activationRadiusCm": 3.5,

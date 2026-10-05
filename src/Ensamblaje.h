@@ -2,11 +2,12 @@
 #include "Minigame.h"
 
 // Ensamblaje Progresivo
-// Cada ciclo muestra una figura en el centro, dividida en N fragmentos dispersos cerca
-// de los bordes. Un token recoge un fragmento al tocarlo y lo lleva consigo, también dentro
-// de la zona central. Cuando un token con fragmento se une a otro dentro de la zona, ese
-// fragmento se fija en la figura: un fragmento por unión (hay que separarse y volver a unirse
-// para fijar el siguiente). La figura se completa al fijar el último fragmento.
+// Cada ciclo muestra una figura en el centro, cortada en N fragmentos de formas distintas
+// que esperan a los lados de la zona central. Un token recoge un fragmento al tocarlo y lo
+// lleva consigo. Cada fragmento tiene un único lugar en la figura (rompecabezas): se fija
+// cuando el token que lo lleva está sobre ese lugar y se une a otro token. Un fragmento por
+// unión: hay que separarse y volver a unirse para fijar el siguiente. Si el lugar es
+// incorrecto, el fragmento tiembla y la unión no se gasta (pueden deslizarse al lugar correcto).
 class Ensamblaje : public Minigame {
 public:
 	std::string id() const override { return "ensamblaje"; }
@@ -21,18 +22,22 @@ private:
 	enum Phase { PLAYING, ASSEMBLING, RESULT, FINISHED };
 	struct Fragment {
 		std::vector<glm::vec2> shape; // relativo a su propio centroide
-		glm::vec2 slot; // posición final (px)
+		int index = 0;
+		glm::vec2 slot; // su único lugar en la figura (px)
 		glm::vec2 pos;
 		int carrier = -1; // uid del token que lo lleva
 		bool fixed = false; // ya está en su lugar de la figura
 		float fixedAt = -1;
+		int rejectSlot = -1; // lugar incorrecto donde se intentó fijar (-1 = no se está rechazando)
+		float rejectAt = -1;
 		// Tokens que ya estaban encima al aparecer el fragmento: no pueden recogerlo
 		// hasta salir de su radio (evita recoger sin intención).
 		std::set<int> blocked;
 	};
 
 	void startCycle();
-	bool groupInZone(const TokenTracker & tracker, const TokenTracker::Group & g) const;
+	bool touches(const Fragment & f, const glm::vec2 & p) const;
+	int nearestSlot(const glm::vec2 & p) const;
 	static void drawPolygon(const std::vector<glm::vec2> & pts, const glm::vec2 & at, bool filled);
 
 	Phase phase = PLAYING;

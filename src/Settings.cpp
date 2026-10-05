@@ -46,6 +46,8 @@ void Settings::load(const std::string & path) {
 		read(e, "pickupRadiusCm", ensamblaje.pickupRadiusCm);
 		read(e, "minJoinedTokens", ensamblaje.minJoinedTokens);
 		read(e, "figureRadiusCm", ensamblaje.figureRadiusCm);
+		read(e, "matchMaxDistCm", ensamblaje.matchMaxDistCm);
+		read(e, "slotOutlineAlpha", ensamblaje.slotOutlineAlpha);
 		read(e, "edgeMarginCm", ensamblaje.edgeMarginCm);
 		read(e, "assembleAnimSec", ensamblaje.assembleAnimSec);
 		read(e, "resultShowSec", ensamblaje.resultShowSec);
@@ -126,6 +128,8 @@ void Settings::save(const std::string & path) const {
 		{ "pickupRadiusCm", ensamblaje.pickupRadiusCm },
 		{ "minJoinedTokens", ensamblaje.minJoinedTokens },
 		{ "figureRadiusCm", ensamblaje.figureRadiusCm },
+		{ "matchMaxDistCm", ensamblaje.matchMaxDistCm },
+		{ "slotOutlineAlpha", ensamblaje.slotOutlineAlpha },
 		{ "edgeMarginCm", ensamblaje.edgeMarginCm },
 		{ "assembleAnimSec", ensamblaje.assembleAnimSec },
 		{ "resultShowSec", ensamblaje.resultShowSec },

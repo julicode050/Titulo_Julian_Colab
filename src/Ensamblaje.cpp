@@ -56,40 +56,65 @@ void Ensamblaje::startCycle() {
 	for (auto & p : figure)
 		p *= R;
 
-	// Cortes angulares: cada fragmento es una cuña desde el centro.
+	// Cortes angulares irregulares: cada fragmento es una cuña desde el centro con un ángulo
+	// distinto (entre 0,6 y 1,4 veces el reparto parejo), para que cada pieza tenga forma propia.
+	std::vector<float> spans(n);
+	float total = 0;
+	for (auto & w : spans)
+		total += (w = ofRandom(0.6f, 1.4f));
 	float rot = ofRandom(TWO_PI);
 	fragments.clear();
+	float a0 = rot;
 	for (int i = 0; i < n; ++i) {
-		float a0 = rot + i * TWO_PI / n;
-		float a1 = rot + (i + 1) * TWO_PI / n;
+		float a1 = a0 + spans[i] / total * TWO_PI;
+		// Cuña: centro, corte inicial, esquinas de la figura dentro del ángulo, corte final.
 		std::vector<glm::vec2> wedge { glm::vec2(0), rayHit(figure, a0) };
-		for (int step = 1; step < 24; ++step)
-			wedge.push_back(rayHit(figure, ofLerp(a0, a1, step / 24.0f)));
+		std::vector<std::pair<float, glm::vec2>> corners;
+		for (auto & v : figure) {
+			float rel = fmod(atan2(v.y, v.x) - a0 + 4 * TWO_PI, TWO_PI);
+			if (rel > 1e-4f && rel < a1 - a0 - 1e-4f) corners.push_back({ rel, v });
+		}
+		std::sort(corners.begin(), corners.end(), [](auto & x, auto & y) { return x.first < y.first; });
+		for (auto & c : corners)
+			wedge.push_back(c.second);
 		wedge.push_back(rayHit(figure, a1));
 
+		// Centroide de área: el punto donde el token debe ubicar la pieza.
 		glm::vec2 c(0);
-		for (auto & p : wedge)
-			c += p;
-		c /= (float)wedge.size();
+		float area = 0;
+		for (size_t k = 0; k < wedge.size(); ++k) {
+			glm::vec2 p = wedge[k], q = wedge[(k + 1) % wedge.size()];
+			float cross = p.x * q.y - q.x * p.y;
+			area += cross;
+			c += (p + q) * cross;
+		}
+		c /= (3.0f * area);
 
 		Fragment f;
+		f.index = i;
 		for (auto & p : wedge)
 			f.shape.push_back(p - c);
 		f.slot = center + c;
 		fragments.push_back(f);
+		a0 = a1;
 	}
 
-	// Posiciones iniciales repartidas alrededor del borde (territorio de almacenamiento).
+	// Posiciones iniciales en columnas a ambos lados de la zona (territorio de almacenamiento),
+	// en orden barajado para que la posición no delate el lugar de cada pieza.
 	float margin = cm(s.edgeMarginCm);
-	float rx = ofGetWidth() * 0.5f - margin;
-	float ry = ofGetHeight() * 0.5f - margin;
-	float a0 = ofRandom(TWO_PI);
+	float zone = cm(s.zoneRadiusCm);
+	float sideX = (zone + ofGetWidth() * 0.5f - margin) * 0.5f; // centro de la franja lateral
 	std::vector<int> order(n);
 	std::iota(order.begin(), order.end(), 0);
 	std::shuffle(order.begin(), order.end(), std::default_random_engine((unsigned)ofRandom(1e6)));
+	int leftCount = (n + (ofRandom(1) < 0.5f ? 1 : 0)) / 2;
 	for (int i = 0; i < n; ++i) {
-		float a = a0 + i * TWO_PI / n;
-		fragments[order[i]].pos = center + glm::vec2(cos(a) * rx, sin(a) * ry);
+		bool left = i < leftCount;
+		int k = left ? i : i - leftCount;
+		int count = left ? leftCount : n - leftCount;
+		float y = margin + (k + 0.5f) * (ofGetHeight() - 2 * margin) / count;
+		float x = center.x + (left ? -sideX : sideX) + ofRandom(-cm(1.0f), cm(1.0f));
+		fragments[order[i]].pos = glm::vec2(x, y);
 	}
 
 	phase = PLAYING;
@@ -99,11 +124,28 @@ void Ensamblaje::startCycle() {
 	event("cycle_start", "ciclo=" + ofToString(cycle + 1) + " fragmentos=" + ofToString(n));
 }
 
-bool Ensamblaje::groupInZone(const TokenTracker & tracker, const TokenTracker::Group & g) const {
-	float zone = cm(settings().ensamblaje.zoneRadiusCm);
-	for (int uid : g.uids)
-		if (glm::distance(tracker.findToken(uid)->pos, center) > zone) return false;
-	return true;
+// El token toca el fragmento si está dentro de su forma o a menos del radio de recogida.
+bool Ensamblaje::touches(const Fragment & f, const glm::vec2 & p) const {
+	if (glm::distance(f.pos, p) < cm(settings().ensamblaje.pickupRadiusCm)) return true;
+	bool inside = false;
+	for (size_t i = 0, j = f.shape.size() - 1; i < f.shape.size(); j = i++) {
+		glm::vec2 a = f.pos + f.shape[i], b = f.pos + f.shape[j];
+		if ((a.y > p.y) != (b.y > p.y) && p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x) inside = !inside;
+	}
+	return inside;
+}
+
+int Ensamblaje::nearestSlot(const glm::vec2 & p) const {
+	int best = -1;
+	float bestDist = FLT_MAX;
+	for (auto & f : fragments) {
+		float d = glm::distance(p, f.slot);
+		if (d < bestDist) {
+			bestDist = d;
+			best = f.index;
+		}
+	}
+	return best;
 }
 
 void Ensamblaje::update(float dt, const TokenTracker & tracker) {
@@ -113,10 +155,9 @@ void Ensamblaje::update(float dt, const TokenTracker & tracker) {
 	if (phase == PLAYING) {
 		cycleTime += dt;
 
-		float pickup = cm(s.pickupRadiusCm);
 		for (auto & f : fragments) {
 			for (auto & t : tracker.getTokens()) {
-				bool near = glm::distance(f.pos, t.pos) < pickup;
+				bool near = touches(f, t.pos);
 				if (freshCycle && near) f.blocked.insert(t.uid);
 				if (!near) f.blocked.erase(t.uid);
 			}
@@ -140,11 +181,11 @@ void Ensamblaje::update(float dt, const TokenTracker & tracker) {
 				// El fragmento sigue al token, también dentro de la zona.
 				carried->pos = t.pos;
 			} else {
-				// Recoger el fragmento libre más cercano dentro del radio.
+				// Recoger el fragmento libre más cercano que el token esté tocando.
 				Fragment * nearest = nullptr;
-				float best = pickup;
+				float best = FLT_MAX;
 				for (auto & f : fragments) {
-					if (f.fixed || f.carrier >= 0 || f.blocked.count(t.uid)) continue;
+					if (f.fixed || f.carrier >= 0 || f.blocked.count(t.uid) || !touches(f, t.pos)) continue;
 					float d = glm::distance(f.pos, t.pos);
 					if (d < best) {
 						best = d;
@@ -167,18 +208,38 @@ void Ensamblaje::update(float dt, const TokenTracker & tracker) {
 				++it;
 		}
 
-		// Un fragmento fijado por unión: grupo unido dentro de la zona que lleva un fragmento.
+		// Un fragmento fijado por unión, solo en su propio lugar de la figura.
+		float matchDist = cm(s.matchMaxDistCm);
+		float now = ofGetElapsedTimef();
+		std::set<int> wrongNow; // fragmentos que este frame están en un lugar incorrecto
+		float zone = cm(s.zoneRadiusCm);
 		for (auto & g : tracker.getGroups()) {
-			if (g.size() < s.minJoinedTokens || !groupInZone(tracker, g)) continue;
+			// Basta con que el token que lleva la pieza esté en la zona; su compañero puede
+			// unirse desde afuera (los lugares del borde de la figura quedan cerca del límite).
+			if (g.size() < s.minJoinedTokens) continue;
 			bool spent = false;
 			for (int uid : g.uids)
 				if (spentUnion.count(uid)) spent = true;
 			if (spent) continue;
 
 			Fragment * toFix = nullptr;
-			for (auto & f : fragments)
-				for (int uid : g.uids)
-					if (!toFix && f.carrier == uid) toFix = &f;
+			for (auto & f : fragments) {
+				if (f.carrier < 0 || std::find(g.uids.begin(), g.uids.end(), f.carrier) == g.uids.end()) continue;
+				glm::vec2 at = tracker.findToken(f.carrier)->pos;
+				if (glm::distance(at, center) > zone) continue;
+				int slot = nearestSlot(at);
+				if (slot == f.index && glm::distance(at, f.slot) < matchDist) {
+					if (!toFix) toFix = &f;
+				} else {
+					// Lugar incorrecto: el fragmento tiembla; la unión no se gasta.
+					wrongNow.insert(f.index);
+					if (f.rejectSlot != slot) {
+						f.rejectSlot = slot;
+						f.rejectAt = now;
+						event("fragment_rejected", "token=" + ofToString(f.carrier) + " pieza=" + ofToString(f.index) + " lugar=" + ofToString(slot));
+					}
+				}
+			}
 			if (!toFix) continue;
 
 			int carrier = toFix->carrier;
@@ -187,9 +248,13 @@ void Ensamblaje::update(float dt, const TokenTracker & tracker) {
 			toFix->fixedAt = ofGetElapsedTimef();
 			for (int uid : g.uids)
 				spentUnion.insert(uid);
+			wrongNow.erase(toFix->index);
 			int remaining = (int)std::count_if(fragments.begin(), fragments.end(), [](auto & f) { return !f.fixed; });
 			event("fragment_fixed", "token=" + ofToString(carrier) + " restantes=" + ofToString(remaining));
 		}
+
+		for (auto & f : fragments)
+			if (!wrongNow.count(f.index)) f.rejectSlot = -1;
 
 		// Los fragmentos fijados se deslizan a su lugar en la figura.
 		for (auto & f : fragments)
@@ -246,6 +311,16 @@ void Ensamblaje::draw(const TokenTracker & tracker) {
 	ofSetColor(Ui::neutral, 160);
 	drawPolygon(figure, center, false);
 
+	// Contornos de cada lugar: visibles en los primeros ciclos, se desvanecen después.
+	auto & alphas = s.slotOutlineAlpha;
+	float outline = alphas.empty() ? 0.0f : alphas[std::min(cycle, (int)alphas.size() - 1)];
+	if (outline > 0 && phase == PLAYING) {
+		ofSetLineWidth(1.5f);
+		ofSetColor(Ui::neutral, 130 * outline);
+		for (auto & f : fragments)
+			if (!f.fixed) drawPolygon(f.shape, f.slot, false);
+	}
+
 	float t = ofGetElapsedTimef();
 	for (auto & f : fragments) {
 		if (phase == ASSEMBLING || phase == RESULT) {
@@ -253,13 +328,17 @@ void Ensamblaje::draw(const TokenTracker & tracker) {
 			ofSetColor(Ui::accentJoined.getLerped(ofColor::white, flash * 0.7f));
 			drawPolygon(f.shape, f.pos, true);
 		} else if (f.carrier >= 0) {
-			// En tránsito: brillo tenue pulsante
+			// En tránsito: brillo tenue pulsante. Al intentar fijarlo en un lugar incorrecto,
+			// tiembla y se tiñe de rojo un instante.
 			float glow = 0.5f + 0.5f * sin(t * 5.0f);
-			ofSetColor(Ui::accent, 60 + 50 * glow);
+			float rk = f.rejectAt >= 0 ? ofClamp((t - f.rejectAt) / 0.5f, 0, 1) : 1.0f;
+			glm::vec2 shake(sin((t - f.rejectAt) * 60.0f) * cm(0.4f) * (1 - rk), 0);
+			ofColor c = Ui::accent.getLerped(ofColor(235, 80, 80), 1 - rk);
+			ofSetColor(c, 60 + 50 * glow);
 			ofSetLineWidth(8);
-			drawPolygon(f.shape, f.pos, false);
-			ofSetColor(Ui::accent, 220);
-			drawPolygon(f.shape, f.pos, true);
+			drawPolygon(f.shape, f.pos + shake, false);
+			ofSetColor(c, 220);
+			drawPolygon(f.shape, f.pos + shake, true);
 		} else if (f.fixed) {
 			// Fijado en la figura, con un destello breve al fijarse
 			float k = ofClamp((t - f.fixedAt) / 0.6f, 0, 1);
