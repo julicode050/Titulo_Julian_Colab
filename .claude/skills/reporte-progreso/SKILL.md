@@ -51,4 +51,10 @@ Use the project's terms consistently: Ensamblaje Progresivo, Resonancia Dividida
    ```
 2. Deliver the report in chat as well.
 3. Add any decisions Julián mentioned in step 3 to `docs/DECISIONES.md`.
-4. Ask whether to commit and push the report; don't do it unprompted.
+4. **Update `PENDING.md`** with what the report found:
+   - every new or still-open limitation from section 3 that isn't already in `PENDING.md`;
+   - every new item from section 4 ("Qué falta") that isn't already there;
+   - tick or update items the report shows were resolved.
+
+   Edit existing items instead of duplicating them. Write entries in English, like the rest of the file, and date them.
+5. Ask whether to commit and push the report; don't do it unprompted.

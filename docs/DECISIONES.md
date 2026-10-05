@@ -100,3 +100,8 @@ Formato: `### AAAA-MM-DD · Título` y luego **Decisión**, **Motivo** y, cuando
 ### 2026-10-04 · Panel de instrucciones (tecla I)
 **Decisión:** con la tecla I se muestra arriba a la derecha el objetivo, la mecánica y la condición para ganar del minijuego en curso. Empieza oculto. El texto se arma con los valores actuales de `settings.json`, así no queda desactualizado al calibrar. La línea de atajos del panel de debug ya no repite "debug".
 **Motivo:** pedido de Julián para las pruebas. Es una ayuda para el investigador; el brief pide evitar instrucciones largas para los participantes, por eso empieza oculto.
+
+### 2026-10-04 · Ensamblaje: los cortes de las figuras siguen siendo aleatorios (por ahora)
+**Decisión:** se mantienen aleatorios, en cada sesión, los ángulos de corte de las figuras y la posición inicial de las piezas. Queda pendiente evaluar una semilla fija, como ya tienen Resonancia y Marea.
+**Motivo:** hallazgo del reporte del 04-10. Con el calce de rompecabezas, la dificultad de cada ciclo depende de la forma de las piezas, así que dos grupos pueden enfrentar figuras de distinta dificultad y sus sesiones no son directamente comparables. Para el bodystorming no es un problema, pero conviene resolverlo antes de las sesiones con participantes.
+**Commit:** `c4d9fd0` (introdujo los cortes irregulares).

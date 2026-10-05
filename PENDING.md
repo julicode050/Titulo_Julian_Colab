@@ -68,7 +68,9 @@ All values below live in `bin/data/settings.json` and can be changed without rec
 
 **Ensamblaje Progresivo**
 - [ ] Calibrate the pickup radius (2.5 cm); figure, zone and match sizes are covered by the table test above.
-- [ ] Fragment positions use **no fixed seed** (unlike Resonancia and Marea), so every session differs. Consider seeding them to make sessions comparable.
+- [ ] Calibrate how the place outlines fade (`slotOutlineAlpha` = 1, 1, 0.6, 0.3, 0, 0 per cycle). (Report 2026-10-04.)
+- [ ] Re-test the rule that only the **carrying** token must be inside the zone. It was added after the last simulator run on 2026-10-04 and hasn't been tested since. (Report 2026-10-04.)
+- [ ] **No fixed seed** for the starting piece positions **or the cut angles of the figures** (unlike Resonancia and Marea), so every session gets differently shaped pieces. With puzzle matching, difficulty depends on piece shape, so sessions aren't comparable. Fine for bodystorming; consider a fixed seed before sessions with participants. (Report 2026-10-04.)
 
 **Resonancia Dividida**
 - [ ] The session lasts ~5.3 min, slightly under the brief's 6–7 min. Raise `cycles` (e.g. to 8) if needed.
