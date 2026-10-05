@@ -30,20 +30,6 @@ void text(const std::string & s, float x, float y, int size) {
 	f.drawString(s, x - box.width * 0.5f - box.x, y - box.height * 0.5f - box.y);
 }
 
-void textLeft(const std::string & s, float x, float y, int size) {
-	auto & f = fonts[std::clamp(size, 0, 2)];
-	if (!f.isLoaded()) {
-		ofDrawBitmapString(s, x, y);
-		return;
-	}
-	f.drawString(s, x, y);
-}
-
-float textWidth(const std::string & s, int size) {
-	auto & f = fonts[std::clamp(size, 0, 2)];
-	return f.isLoaded() ? f.stringWidth(s) : s.size() * 8.0f;
-}
-
 void ring(const glm::vec2 & c, float radius, float progress, float thickness) {
 	progress = ofClamp(progress, 0, 1);
 	if (progress <= 0) return;
