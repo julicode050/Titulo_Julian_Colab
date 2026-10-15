@@ -5,12 +5,13 @@ Commitments made while starting the minigame sprint (Oct 2026). Tick them off as
 ## 1. Build the new physical tokens
 - [ ] Fabricate tokens **A** and **B** so they are detected on their own *and*, when interlocked, are recognized as one unit.
   - Plan: fabrication starts the week of 2026-10-05. On Monday 2026-10-05 Julián asks last year's student for his 3D models, to use as a starting point.
+  - Status 2026-10-15: pad layout defined (docs/TOKENS.md, v1); Julián is designing the token bodies in Fusion.
 - [x] Share their geometry (2026-10-15): full spec in [docs/TOKENS.md](docs/TOKENS.md). A = equilateral, 30 mm sides; B = scalene, 35 / 15 / 23.25 mm; Ø5 mm pads. When interlocked, the 6 pads interleave in a roughly circular layout, 42.5 × 38.2 mm.
 - [ ] **Probe tests before fabricating** (see TOKENS.md): two Ø5 mm pads at **11 mm** between centres must read as 2 contacts; a Ø5 mm pad must register reliably; A and B alone must read as 'A' and 'E' in the debug panel.
 - [x] **Interlocked-pair recognition by size matching** (2026-10-15, branch `tokens-v1`): `TokenTracker` tries the 10 ways of splitting 6 points into two trios and picks the best match with A's and B's side lengths (`tokenSidesMm`). It counts them as interlocked only if their centres are at the interlock distance (13.2 ± 3 mm). Otherwise they're just close. Falls back to the old spatial split for the current tokens. Verified in the simulator.
 - [x] Token B mapped to 'E' (`tokenLetters` B = "BCE", keeps the current B working) and simulator updated with the new shapes (T key switches new / current tokens).
-- [ ] **Verify the recognition with the real new tokens** once fabricated, including printing error and screen noise, and calibrate `pairFitTolMm` (2.5) and `interlockedTolMm` (3).
-- [ ] Merge branch `tokens-v1` into `main` once Julián is happy with it.
+- [ ] **Verify the recognition with the real new tokens** once fabricated, including printing error and screen noise, and calibrate `pairFitTolMm` (2.5) and `interlockedTolMm` (3). Pad positions must be accurate to about **1–1.5 mm**: recognition drops to ~85 % at 2 mm error per pad. (Report 2026-10-15.)
+- [ ] **Branch `tokens-v1` stays separate from `main`** (decided 2026-10-15). Julián merges it into `main` himself after testing with the fabricated tokens. Until then `main` keeps the current detection (proximity joining at 5 cm, spatial split). To work on the new tokens: `git checkout tokens-v1`; to go back: `git checkout main`.
 
 Until then, "joined" is inferred by proximity: two tokens whose centres are closer than `joinDistanceCm` (5 cm), or whose contacts merge into one group of ≥ `joinedMinPoints` (6) points. This means tokens that merely pass close to each other also count as joined for a moment. With the new tokens, `joinDistanceCm` can probably be set to `0`.
 
@@ -60,7 +61,9 @@ All values below live in `bin/data/settings.json` and can be changed without rec
 
 **Testing**
 - [ ] Systematic testing of all three games on the table with the physical tokens. So far: automated runs in the desktop simulator and Julián's preliminary solo bodystorming.
-- [ ] Bodystorming with two people.
+- [x] Bodystorming with other people (first sessions before 2026-10-15). **Finding:** with the current tokens the experience isn't good enough, because they don't interlock, so the game doesn't encourage working as a team. This supports building the new interlocking tokens.
+- [ ] **More bodystorming, and take photos for the final report** (Julián, requested 2026-10-15).
+- [ ] Bodystorming with the new interlocking tokens once they're fabricated, to check whether interlocking does encourage teamwork.
 
 **Detection (unresolved limitations)**
 - [ ] The software can't tell "interlocked" from "very close" (see section 1). **Solved in the simulator** on branch `tokens-v1` (2026-10-15); still to verify with the real new tokens. Proximity joining is now off (`joinDistanceCm` = 0).
@@ -87,4 +90,4 @@ All values below live in `bin/data/settings.json` and can be changed without rec
 ## 6. Later
 - [ ] Confirm the final number of tokens (2 for now, one per person).
 - [ ] Automatic event logging (CSV/JSON). Out of scope this sprint, so Julián logs manually. The code is ready: listen to `Events::token()` and `Events::game()` in `src/Events.h`.
-- [ ] Scaling to 4 people (out of scope this sprint).
+- [ ] Scaling to 4 people (out of scope this sprint). Note: the interlocked-pair recognition assumes exactly **two** tokens of 3 pads each; it would need generalizing for more tokens. (Report 2026-10-15.)

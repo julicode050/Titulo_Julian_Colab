@@ -127,3 +127,7 @@ Especificación completa en `docs/TOKENS.md`.
 **Motivo:** con los tokens nuevos, los puntos de A y B quedan intercalados y la separación espacial los mezclaría. El calce de medidas además permite distinguir "encajados" de "muy cerca", una limitación abierta desde el inicio. La unión por proximidad se desactiva porque contaba como unidos a dos tokens solo cercanos. Con los tokens actuales no se pierde nada: al juntarse, sus contactos ya se funden en un grupo.
 **Verificación:** en el simulador, el par encajado se reconoció como unido con cada punto asignado a su token, también tras girarlo 180°. Dos tokens nuevos a 45 mm (contactos en el mismo grupo) no se dieron por unidos, y los tokens actuales siguieron uniéndose. Falta verificarlo con los tokens reales.
 **Rama:** `tokens-v1`.
+
+### 2026-10-15 · La rama `tokens-v1` queda separada de `main` hasta probar con tokens reales
+**Decisión:** el reconocimiento de los tokens nuevos queda en la rama `tokens-v1`, sin fusionar con `main`. Julián hará el merge después de probarlo con los tokens fabricados.
+**Motivo:** el cambio solo se verificó en el simulador. `main` conserva la detección que funciona con los tokens actuales mientras los nuevos no existan físicamente.
