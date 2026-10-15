@@ -105,3 +105,14 @@ Formato: `### AAAA-MM-DD · Título` y luego **Decisión**, **Motivo** y, cuando
 **Decisión:** se mantienen aleatorios, en cada sesión, los ángulos de corte de las figuras y la posición inicial de las piezas. Queda pendiente evaluar una semilla fija, como ya tienen Resonancia y Marea.
 **Motivo:** hallazgo del reporte del 04-10. Con el calce de rompecabezas, la dificultad de cada ciclo depende de la forma de las piezas, así que dos grupos pueden enfrentar figuras de distinta dificultad y sus sesiones no son directamente comparables. Para el bodystorming no es un problema, pero conviene resolverlo antes de las sesiones con participantes.
 **Commit:** `c4d9fd0` (introdujo los cortes irregulares).
+
+### 2026-10-15 · Diseño de los tokens A y B (versión 1)
+**Decisión:**
+- **A:** triángulo equilátero de 30 mm.
+- **B:** triángulo escaleno (35 / 15 / 23,25 mm).
+- Almohadillas de Ø5 mm.
+- Al encajar, los patrones se superponen y los 6 puntos quedan intercalados en un arreglo aproximadamente circular de 42,5 × 38,2 mm. B1 se ubicó a 35 mm de B3 (no a 30) para que ningún par de puntos quede a menos de 11 mm entre centros.
+
+Especificación completa en `docs/TOKENS.md`.
+**Motivo:** reducir la huella del par unido, que pasa a ocupar casi lo mismo que un token, y lograr que el par encajado sea reconocible como unidad. El análisis en el computador mostró que solo el reparto correcto de los 6 puntos calza con las medidas de A y B (99,8 % de acierto con 1 mm de error por punto). En la primera versión, con B1 a 30 mm, dos puntos quedaban a 7,8 mm entre centros, con riesgo de que la pantalla los fundiera en un solo toque.
+**Pendiente:** probar con probetas la separación de 11 mm y el registro de almohadillas de Ø5 mm, e implementar el reconocimiento por calce de medidas en `TokenTracker`.

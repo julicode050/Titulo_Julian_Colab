@@ -5,9 +5,10 @@ Commitments made while starting the minigame sprint (Oct 2026). Tick them off as
 ## 1. Build the new physical tokens
 - [ ] Fabricate tokens **A** and **B** so they are detected on their own *and*, when interlocked, are recognized as one unit.
   - Plan: fabrication starts the week of 2026-10-05. On Monday 2026-10-05 Julián asks last year's student for his 3D models, to use as a starting point.
-- [ ] When they exist, share their geometry so detection can be tuned in `bin/data/settings.json` (`deteccion` section):
-  - contact pattern of each token (number of points, spacing in cm)
-  - what the interlocked pair looks like to the screen (how many points, how far apart)
+- [x] Share their geometry (2026-10-15): full spec in [docs/TOKENS.md](docs/TOKENS.md). A = equilateral, 30 mm sides; B = scalene, 35 / 15 / 23.25 mm; Ø5 mm pads. When interlocked, the 6 pads interleave in a roughly circular layout, 42.5 × 38.2 mm.
+- [ ] **Probe tests before fabricating** (see TOKENS.md): two Ø5 mm pads at **11 mm** between centres must read as 2 contacts; a Ø5 mm pad must register reliably; A and B alone must read as 'A' and 'E' in the debug panel.
+- [ ] **Implement interlocked-pair recognition by size matching** in `TokenTracker`: try the 10 ways of splitting the 6 points into two trios and pick the one that best matches A's and B's known side lengths. The current spatial split (k-means) would mix A's and B's interleaved points. Simulated identification is 99.8 % correct with 1 mm error per point.
+- [ ] Map token B to letter **'E'** (scalene) in `settings.json` → `deteccion.tokenLetters`, and update the simulator's token shapes to the new A and B.
 
 Until then, "joined" is inferred by proximity: two tokens whose centres are closer than `joinDistanceCm` (5 cm), or whose contacts merge into one group of ≥ `joinedMinPoints` (6) points. This means tokens that merely pass close to each other also count as joined for a moment. With the new tokens, `joinDistanceCm` can probably be set to `0`.
 
@@ -60,8 +61,8 @@ All values below live in `bin/data/settings.json` and can be changed without rec
 - [ ] Bodystorming with two people.
 
 **Detection (unresolved limitations)**
-- [ ] The software can't tell "interlocked" from "very close" (see section 1). This is resolved by the new tokens.
-- [ ] Splitting a merged cluster into its tokens assumes **3 contact points per token**. If the new tokens use a different number of contacts, this assumption must be adjusted.
+- [ ] The software can't tell "interlocked" from "very close" (see section 1). The new token design solves it once size-matching recognition is implemented (section 1): the 6 points must match the interlocked layout in TOKENS.md.
+- [x] ~~Splitting a merged cluster assumes 3 contact points per token.~~ The new tokens keep 3 points each (2026-10-15), so the assumption holds.
 
 **Research workflow**
 - [ ] There's no time reference on screen to sync the game with the session video. The brief asks to point to specific moments in the interview. Consider a small session clock, or rely on automatic logging once it exists.
