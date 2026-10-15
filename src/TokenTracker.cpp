@@ -42,6 +42,70 @@ static std::vector<std::vector<ofVec2f>> splitCluster(const std::vector<ofVec2f>
 	return parts;
 }
 
+static std::array<float, 3> sortedSides(const ofVec2f & a, const ofVec2f & b, const ofVec2f & c) {
+	std::array<float, 3> s { a.distance(b), b.distance(c), a.distance(c) };
+	std::sort(s.begin(), s.end());
+	return s;
+}
+
+// Par encajado de los tokens nuevos (docs/TOKENS.md): al encajar, los 3 puntos de A y los 3 de B
+// quedan intercalados, así que separarlos por cercanía los mezclaría. Se prueban los 10 repartos
+// de los 6 puntos en dos tríos y se elige el que mejor calza con las medidas conocidas de A y B.
+bool TokenTracker::decodePair(const std::vector<ofVec2f> & pts, int clusterId, std::vector<Observation> & out) const {
+	auto & sidesMm = settings().tokenSidesMm;
+	if (pts.size() != 6 || sidesMm.size() != 2) return false;
+
+	float pxPerMm = settings().pxPerCm / 10.0f;
+	std::vector<std::pair<std::string, std::array<float, 3>>> templates;
+	for (auto & [label, sides] : sidesMm) {
+		if (sides.size() != 3) return false;
+		std::array<float, 3> t { sides[0] * pxPerMm, sides[1] * pxPerMm, sides[2] * pxPerMm };
+		std::sort(t.begin(), t.end());
+		templates.push_back({ label, t });
+	}
+	auto fit = [](const std::array<float, 3> & s, const std::array<float, 3> & t) {
+		return (s[0] - t[0]) * (s[0] - t[0]) + (s[1] - t[1]) * (s[1] - t[1]) + (s[2] - t[2]) * (s[2] - t[2]);
+	};
+
+	float bestErr = FLT_MAX;
+	std::vector<int> bestFirst, bestSecond; // tríos asignados a templates[0] y templates[1]
+	for (int i = 1; i < 6; ++i) {
+		for (int j = i + 1; j < 6; ++j) {
+			std::vector<int> trio { 0, i, j }, rest;
+			for (int k = 1; k < 6; ++k)
+				if (k != i && k != j) rest.push_back(k);
+			auto s1 = sortedSides(pts[trio[0]], pts[trio[1]], pts[trio[2]]);
+			auto s2 = sortedSides(pts[rest[0]], pts[rest[1]], pts[rest[2]]);
+			float e1 = fit(s1, templates[0].second) + fit(s2, templates[1].second);
+			float e2 = fit(s2, templates[0].second) + fit(s1, templates[1].second);
+			if (e1 < bestErr) bestErr = e1, bestFirst = trio, bestSecond = rest;
+			if (e2 < bestErr) bestErr = e2, bestFirst = rest, bestSecond = trio;
+		}
+	}
+	float rmsMm = std::sqrt(bestErr / 6.0f) / pxPerMm;
+	if (rmsMm > settings().pairFitTolMm) return false; // no son los tokens nuevos: usar el método general
+
+	std::vector<Observation> two;
+	for (int t = 0; t < 2; ++t) {
+		auto & idx = t == 0 ? bestFirst : bestSecond;
+		Observation o;
+		for (int k : idx)
+			o.points.push_back(pts[k]);
+		o.pos = classifier->centroid(o.points);
+		o.letter = classifier->classifyShape(classifier->orderByAngle(o.points));
+		o.label = templates[t].first;
+		two.push_back(o);
+	}
+	// Encajados solo si sus centros quedan a la distancia del encaje; si no, están solo cerca.
+	float centroidMm = glm::distance(two[0].pos, two[1].pos) / pxPerMm;
+	bool interlocked = std::fabs(centroidMm - settings().interlockedCentroidDistMm) < settings().interlockedTolMm;
+	for (auto & o : two) {
+		o.mergeId = interlocked ? clusterId : -1;
+		out.push_back(o);
+	}
+	return true;
+}
+
 void TokenTracker::setup(const Token * c) {
 	classifier = c;
 	tokens.clear();
@@ -70,6 +134,8 @@ std::vector<TokenTracker::Observation> TokenTracker::observe(const std::vector<o
 				fingers.push_back(p);
 			continue;
 		}
+
+		if (decodePair(cluster, i, obs)) continue;
 
 		std::vector<std::vector<ofVec2f>> parts;
 		int mergeId = -1;

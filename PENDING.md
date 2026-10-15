@@ -7,8 +7,10 @@ Commitments made while starting the minigame sprint (Oct 2026). Tick them off as
   - Plan: fabrication starts the week of 2026-10-05. On Monday 2026-10-05 Julián asks last year's student for his 3D models, to use as a starting point.
 - [x] Share their geometry (2026-10-15): full spec in [docs/TOKENS.md](docs/TOKENS.md). A = equilateral, 30 mm sides; B = scalene, 35 / 15 / 23.25 mm; Ø5 mm pads. When interlocked, the 6 pads interleave in a roughly circular layout, 42.5 × 38.2 mm.
 - [ ] **Probe tests before fabricating** (see TOKENS.md): two Ø5 mm pads at **11 mm** between centres must read as 2 contacts; a Ø5 mm pad must register reliably; A and B alone must read as 'A' and 'E' in the debug panel.
-- [ ] **Implement interlocked-pair recognition by size matching** in `TokenTracker`: try the 10 ways of splitting the 6 points into two trios and pick the one that best matches A's and B's known side lengths. The current spatial split (k-means) would mix A's and B's interleaved points. Simulated identification is 99.8 % correct with 1 mm error per point.
-- [ ] Map token B to letter **'E'** (scalene) in `settings.json` → `deteccion.tokenLetters`, and update the simulator's token shapes to the new A and B.
+- [x] **Interlocked-pair recognition by size matching** (2026-10-15, branch `tokens-v1`): `TokenTracker` tries the 10 ways of splitting 6 points into two trios and picks the best match with A's and B's side lengths (`tokenSidesMm`). It counts them as interlocked only if their centres are at the interlock distance (13.2 ± 3 mm). Otherwise they're just close. Falls back to the old spatial split for the current tokens. Verified in the simulator.
+- [x] Token B mapped to 'E' (`tokenLetters` B = "BCE", keeps the current B working) and simulator updated with the new shapes (T key switches new / current tokens).
+- [ ] **Verify the recognition with the real new tokens** once fabricated, including printing error and screen noise, and calibrate `pairFitTolMm` (2.5) and `interlockedTolMm` (3).
+- [ ] Merge branch `tokens-v1` into `main` once Julián is happy with it.
 
 Until then, "joined" is inferred by proximity: two tokens whose centres are closer than `joinDistanceCm` (5 cm), or whose contacts merge into one group of ≥ `joinedMinPoints` (6) points. This means tokens that merely pass close to each other also count as joined for a moment. With the new tokens, `joinDistanceCm` can probably be set to `0`.
 
@@ -61,7 +63,7 @@ All values below live in `bin/data/settings.json` and can be changed without rec
 - [ ] Bodystorming with two people.
 
 **Detection (unresolved limitations)**
-- [ ] The software can't tell "interlocked" from "very close" (see section 1). The new token design solves it once size-matching recognition is implemented (section 1): the 6 points must match the interlocked layout in TOKENS.md.
+- [ ] The software can't tell "interlocked" from "very close" (see section 1). **Solved in the simulator** on branch `tokens-v1` (2026-10-15); still to verify with the real new tokens. Proximity joining is now off (`joinDistanceCm` = 0).
 - [x] ~~Splitting a merged cluster assumes 3 contact points per token.~~ The new tokens keep 3 points each (2026-10-15), so the assumption holds.
 
 **Research workflow**

@@ -1,15 +1,30 @@
 {
     "deteccion": {
         "clusterThresholdPx": 150.0,
+        "interlockedCentroidDistMm": 13.23,
+        "interlockedTolMm": 3.0,
         "joinConfirmFrames": 5,
-        "joinDistanceCm": 5.0,
+        "joinDistanceCm": 0.0,
         "joinedMinPoints": 6,
         "labelConfirmFrames": 10,
+        "pairFitTolMm": 2.5,
         "separateConfirmFrames": 10,
         "tokenGraceFrames": 15,
         "tokenLetters": {
             "A": "A",
-            "B": "BC"
+            "B": "BCE"
+        },
+        "tokenSidesMm": {
+            "A": [
+                30.0,
+                30.0,
+                30.0
+            ],
+            "B": [
+                15.0,
+                23.25,
+                35.0
+            ]
         },
         "trackMaxJumpCm": 8.0
     },

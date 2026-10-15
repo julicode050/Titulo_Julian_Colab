@@ -35,6 +35,10 @@ void Settings::load(const std::string & path) {
 		read(d, "labelConfirmFrames", labelConfirmFrames);
 		read(d, "trackMaxJumpCm", trackMaxJumpCm);
 		read(d, "tokenLetters", tokenLetters);
+		read(d, "tokenSidesMm", tokenSidesMm);
+		read(d, "pairFitTolMm", pairFitTolMm);
+		read(d, "interlockedCentroidDistMm", interlockedCentroidDistMm);
+		read(d, "interlockedTolMm", interlockedTolMm);
 	}
 	if (j.contains("menu")) {
 		read(j["menu"], "dwellSec", menuDwellSec);
@@ -120,6 +124,10 @@ void Settings::save(const std::string & path) const {
 		{ "labelConfirmFrames", labelConfirmFrames },
 		{ "trackMaxJumpCm", trackMaxJumpCm },
 		{ "tokenLetters", tokenLetters },
+		{ "tokenSidesMm", tokenSidesMm },
+		{ "pairFitTolMm", pairFitTolMm },
+		{ "interlockedCentroidDistMm", interlockedCentroidDistMm },
+		{ "interlockedTolMm", interlockedTolMm },
 	};
 	j["menu"] = { { "dwellSec", menuDwellSec } };
 	j["ensamblaje"] = {

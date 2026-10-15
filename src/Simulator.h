@@ -2,8 +2,8 @@
 #include "ofMain.h"
 
 // Simulador de escritorio: dos tokens virtuales que se arrastran con el mouse.
-// Genera puntos de contacto sintéticos con la forma de cada token (A = triángulo
-// equilátero, B = isósceles), que entran al mismo pipeline que los puntos reales
+// Genera puntos de contacto sintéticos con la forma de cada token (tecla T: tokens nuevos
+// de docs/TOKENS.md, o los actuales: A equilátero, B isósceles), que entran al mismo pipeline que los puntos reales
 // (clusterTouches -> classifyShape -> TokenTracker). Sirve para probar los minijuegos
 // sin la pantalla táctil ni los tokens físicos.
 class Simulator {
@@ -39,6 +39,7 @@ private:
 
 	SimToken tokens[2];
 	bool joined = false;
+	bool newTokens = true; // true: tokens v1 de docs/TOKENS.md; false: tokens actuales
 	int dragging = -1;
 	int lastTouched = 0;
 	glm::vec2 dragOffset;

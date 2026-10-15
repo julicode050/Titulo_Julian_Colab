@@ -12,7 +12,7 @@ struct Settings {
 	// --- Detección ---
 	float clusterThresholdPx = 150.0f; // puntos más cercanos que esto pertenecen al mismo grupo
 	int joinedMinPoints = 6; // un grupo con >= estos puntos es un par de tokens unidos
-	float joinDistanceCm = 5.0f; // dos tokens separados cuyos centros están más cerca que esto cuentan como unidos (0 = desactivado)
+	float joinDistanceCm = 0.0f; // dos tokens separados cuyos centros están más cerca que esto cuentan como unidos (0 = desactivado)
 	int tokenGraceFrames = 15; // frames que un token puede desaparecer sin considerarse retirado
 	int joinConfirmFrames = 5; // frames seguidos para confirmar una unión
 	int separateConfirmFrames = 10; // frames seguidos para confirmar una separación
@@ -20,7 +20,14 @@ struct Settings {
 	float trackMaxJumpCm = 8.0f; // salto máximo por frame para seguir siendo el mismo token
 	// Etiqueta de cada token físico -> letras que el clasificador puede devolver para él.
 	// (En el juego anterior, un mismo token se leía como 'B' o 'C'.)
-	std::map<std::string, std::string> tokenLetters = { { "A", "A" }, { "B", "BC" } };
+	// (B nuevo, escaleno, se lee como 'E'; se mantienen B/C para los tokens actuales.)
+	std::map<std::string, std::string> tokenLetters = { { "A", "A" }, { "B", "BCE" } };
+	// Medidas de los tokens nuevos (docs/TOKENS.md): largo de los 3 lados de cada uno, en mm.
+	// Sirven para reconocer el par encajado (6 puntos intercalados). Vacío = desactivado.
+	std::map<std::string, std::vector<float>> tokenSidesMm = { { "A", { 30, 30, 30 } }, { "B", { 15, 23.25f, 35 } } };
+	float pairFitTolMm = 2.5f; // error medio máximo por lado para aceptar un reparto de los 6 puntos
+	float interlockedCentroidDistMm = 13.23f; // distancia entre los centros de A y B al encajar
+	float interlockedTolMm = 3.0f; // tolerancia de esa distancia para considerarlos encajados
 
 	// --- Menú ---
 	float menuDwellSec = 1.5f;

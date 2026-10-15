@@ -57,6 +57,7 @@ private:
 	};
 
 	std::vector<Observation> observe(const std::vector<ofVec2f> & pts);
+	bool decodePair(const std::vector<ofVec2f> & pts, int clusterId, std::vector<Observation> & out) const;
 	std::string labelFor(char letter) const;
 	void matchObservations(std::vector<Observation> & obs);
 	void updatePairs();

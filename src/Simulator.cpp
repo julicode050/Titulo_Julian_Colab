@@ -1,6 +1,23 @@
 #include "Simulator.h"
 #include "Settings.h"
 
+// Tokens nuevos (docs/TOKENS.md, v1): centros de las almohadillas en mm, con el par encajado,
+// origen en el punto de abajo de A y eje Y hacia arriba.
+static const glm::vec2 kPadsA[3] = { { 0.00f, 0.00f }, { 0.00f, 30.00f }, { 25.98f, 15.00f } };
+static const glm::vec2 kPadsB[3] = { { -11.51f, 25.68f }, { 10.50f, 33.18f }, { 23.49f, 25.68f } };
+
+static glm::vec2 centroid(const glm::vec2 (&p)[3]) {
+	return (p[0] + p[1] + p[2]) / 3.0f;
+}
+// mm (Y hacia arriba) relativo al centro del token -> px de pantalla (Y hacia abajo)
+static glm::vec2 mmToScreen(const glm::vec2 & mm) {
+	float pxPerMm = settings().pxPerCm / 10.0f;
+	return glm::vec2(mm.x, -mm.y) * pxPerMm;
+}
+static glm::vec2 rotate(const glm::vec2 & p, float a) {
+	return glm::vec2(p.x * cos(a) - p.y * sin(a), p.x * sin(a) + p.y * cos(a));
+}
+
 void Simulator::setup() {
 	tokens[0] = { "A", glm::vec2(ofGetWidth() * 0.3f, ofGetHeight() * 0.82f), {}, 0, true };
 	tokens[1] = { "B", glm::vec2(ofGetWidth() * 0.7f, ofGetHeight() * 0.82f), {}, 0, true };
@@ -10,7 +27,10 @@ void Simulator::setup() {
 }
 
 void Simulator::update(float dt) {
-	if (joined) tokens[1].target = tokens[0].pos + joinedOffset();
+	if (joined) {
+		tokens[1].target = tokens[0].pos + joinedOffset();
+		if (newTokens) tokens[1].angle = tokens[0].angle; // encajados giran juntos
+	}
 	float step = settings().cm(50.0f) * dt; // 50 cm/s
 	for (auto & t : tokens) {
 		glm::vec2 d = t.target - t.pos;
@@ -30,7 +50,12 @@ bool Simulator::arrived(int i) const {
 std::vector<ofVec2f> Simulator::shapePoints(const SimToken & t) const {
 	float s = settings().cm(settings().simTokenSideCm);
 	std::vector<glm::vec2> local;
-	if (t.label == "A") {
+	if (newTokens) {
+		auto & pads = t.label == "A" ? kPadsA : kPadsB;
+		glm::vec2 c = centroid(pads);
+		for (auto & p : pads)
+			local.push_back(mmToScreen(p - c));
+	} else if (t.label == "A") {
 		// Equilátero -> classifyShape devuelve 'A'
 		float r = s / sqrt(3.0f);
 		for (int k = 0; k < 3; ++k) {
@@ -49,15 +74,17 @@ std::vector<ofVec2f> Simulator::shapePoints(const SimToken & t) const {
 
 	std::vector<ofVec2f> out;
 	for (auto & p : local) {
-		glm::vec2 r(p.x * cos(t.angle) - p.y * sin(t.angle), p.x * sin(t.angle) + p.y * cos(t.angle));
+		glm::vec2 r = rotate(p, t.angle);
 		out.emplace_back(t.pos.x + r.x, t.pos.y + r.y);
 	}
 	return out;
 }
 
 glm::vec2 Simulator::joinedOffset() const {
-	// Centros a 4 cm: los contactos quedan dentro del umbral de agrupación,
-	// igual que dos tokens físicos encajados.
+	// Tokens nuevos: B queda en su posición exacta de encaje respecto de A (patrones intercalados).
+	if (newTokens) return rotate(mmToScreen(centroid(kPadsB) - centroid(kPadsA)), tokens[0].angle);
+	// Tokens actuales: centros a 4 cm, los contactos quedan dentro del umbral de agrupación,
+	// igual que dos tokens físicos juntos.
 	return glm::vec2(settings().cm(4.0f), 0);
 }
 
@@ -111,6 +138,10 @@ bool Simulator::keyPressed(int key) {
 		joined = !joined;
 		if (!joined) tokens[1].target = tokens[0].pos + glm::vec2(settings().cm(10.0f), 0);
 		return true;
+	case 't':
+	case 'T':
+		newTokens = !newTokens;
+		return true;
 	case 'z':
 	case 'Z':
 		tokens[0].present = !tokens[0].present;
@@ -139,12 +170,14 @@ void Simulator::draw() const {
 	for (auto & t : tokens) {
 		if (!t.present) continue;
 		ofSetColor(255, 255, 255, 90);
-		ofDrawCircle(t.pos, settings().cm(1.9f));
+		float r = settings().cm(newTokens ? 2.3f : 1.9f);
+		ofDrawCircle(t.pos, r);
 		ofSetColor(255, 255, 255, 160);
-		ofDrawBitmapString("sim " + t.label, t.pos.x - 20, t.pos.y + settings().cm(2.6f));
+		ofDrawBitmapString("sim " + t.label, t.pos.x - 20, t.pos.y + r + settings().cm(0.7f));
 	}
 	ofSetColor(255, 255, 255, 200);
-	ofDrawBitmapString("SIMULADOR  arrastrar: mover token | J: unir/separar | Z/X: poner/quitar A/B | Q/E: rotar | S: apagar",
+	ofDrawBitmapString(std::string("SIMULADOR (") + (newTokens ? "tokens nuevos v1" : "tokens actuales")
+			+ ")  arrastrar: mover | J: unir/separar | T: tokens nuevos/actuales | Z/X: poner/quitar A/B | Q/E: rotar | S: apagar",
 		20, ofGetHeight() - 20);
 	ofPopStyle();
 }

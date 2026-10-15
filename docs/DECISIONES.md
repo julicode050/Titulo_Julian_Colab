@@ -116,3 +116,14 @@ Formato: `### AAAA-MM-DD · Título` y luego **Decisión**, **Motivo** y, cuando
 Especificación completa en `docs/TOKENS.md`.
 **Motivo:** reducir la huella del par unido, que pasa a ocupar casi lo mismo que un token, y lograr que el par encajado sea reconocible como unidad. El análisis en el computador mostró que solo el reparto correcto de los 6 puntos calza con las medidas de A y B (99,8 % de acierto con 1 mm de error por punto). En la primera versión, con B1 a 30 mm, dos puntos quedaban a 7,8 mm entre centros, con riesgo de que la pantalla los fundiera en un solo toque.
 **Pendiente:** probar con probetas la separación de 11 mm y el registro de almohadillas de Ø5 mm, e implementar el reconocimiento por calce de medidas en `TokenTracker`.
+
+### 2026-10-15 · Reconocimiento del par encajado por calce de medidas
+**Decisión:**
+- Cuando un grupo tiene 6 puntos, `TokenTracker` prueba los 10 repartos posibles en dos tríos y elige el que mejor calza con las medidas conocidas de A y B (`tokenSidesMm`).
+- Si los centros resultantes están a la distancia de encaje (13,2 ± 3 mm), el par cuenta como **encajado**. Si no, solo están cerca.
+- Si los puntos no calzan con los tokens nuevos, se usa el método anterior (separación espacial), para que los tokens actuales sigan funcionando.
+- Se desactiva la unión por proximidad (`joinDistanceCm` = 0).
+- El simulador incorpora las formas nuevas (tecla T para alternar con las actuales).
+**Motivo:** con los tokens nuevos, los puntos de A y B quedan intercalados y la separación espacial los mezclaría. El calce de medidas además permite distinguir "encajados" de "muy cerca", una limitación abierta desde el inicio. La unión por proximidad se desactiva porque contaba como unidos a dos tokens solo cercanos. Con los tokens actuales no se pierde nada: al juntarse, sus contactos ya se funden en un grupo.
+**Verificación:** en el simulador, el par encajado se reconoció como unido con cada punto asignado a su token, también tras girarlo 180°. Dos tokens nuevos a 45 mm (contactos en el mismo grupo) no se dieron por unidos, y los tokens actuales siguieron uniéndose. Falta verificarlo con los tokens reales.
+**Rama:** `tokens-v1`.
