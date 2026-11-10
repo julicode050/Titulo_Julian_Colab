@@ -42,6 +42,7 @@ All values below live in `bin/data/settings.json` and can be changed without rec
 - [ ] Single-node spacing 6 / 14 / 24 cm, balanced (each twice) and shuffled with a **fixed seed**. If 4 nodes don't fit at a cycle's spacing (always the case at 24 cm), fewer nodes are used; the spacing is never shrunk. Single nodes stay ≥ 7 cm from the double node (`centerClearCm`).
 - [ ] Activation radius 3.5 cm; fill drains at 0.25/s when the token leaves. A joined pair can also activate single nodes. Completed nodes don't respawn within a cycle.
 - [ ] Calibrate in bodystorming whether 20 s per cycle really makes splitting up necessary, and the double node's value (3).
+- [ ] **Spacing and node count aren't independent:** at 24 cm there are always 3 single nodes (4 don't fit), while at 6 and 14 cm there can be 4. Keep this in mind when analysing far-spacing cycles. (Report 2026-11-10.)
 
 **Marea de Presión**
 - [ ] Session 330 s. At most 3 points at once, a new one every 6–12 s. Each point lasts 40 s.
@@ -114,5 +115,8 @@ All tasks are done on branch `tokens-v1` (Julián, 2026-11-10), merged into `mai
 - [x] **6. Brief contact losses** (2026-11-10): tolerances now in **seconds** in `settings.json`: `tokenLossToleranceSec` = **0.5** (a token can vanish this long without counting as removed) and `pairLossToleranceSec` = **0.75** (time without interlock before the pair counts as separated). During the tolerance the token keeps counting at its last position in all three games (piece kept, node keeps filling, Marea mode kept). Confirmed «Desaparece» / «Separación» events carry the time the loss **started**, to match the video. Verified in the simulator.
 - [ ] **Calibrate both tolerances with the real tokens** (Julián: "for now"; to test at the table).
 - [ ] Note for the Excel sheet: a backdated separation is written when it's confirmed, so a row can come after another with a later time. **Sort by `t (s)`** before analysing.
+- [ ] **Open a real session CSV in the Excel sheet** and check columns, accents and decimals. So far only the file's bytes were checked. (Report 2026-11-10.)
+- [ ] Check that **«Pieza fijada»** reaches the log in a real Ensamblaje game; it wasn't exercised in the simulated session. (Report 2026-11-10.)
+- [ ] Calibrate the pause between games in Modo testeo (`menu.testResultsSec` = 8 s). (Report 2026-11-10.)
 - [ ] **7. Real tokens:** verify pair recognition, calibrate `pairFitTolMm` / `interlockedTolMm`, then merge `tokens-v1` into `main`.
 - [ ] **8. Report** at the end of each working day.
