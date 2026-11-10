@@ -185,3 +185,14 @@ La tecla C reinicia los contadores. Mientras está activo, el juego queda en pau
 - con dos puntos, separarse conviene (≈30 contra 27,5 en los ~15 s que tarda en vaciarse el punto desatendido).
 
 Valores aprobados por Julián; quedan por calibrar en bodystorming.
+
+### 2026-11-10 · Resonancia: nodo doble opcional y de mayor valor, ciclos de 20 s
+**Decisión:**
+- Se elimina la fase doble separada. Cada ciclo tiene **3 a 4 nodos individuales** (1 punto) y **1 nodo doble opcional** al centro (3 puntos).
+- Son **6 ciclos de 20 s (2 minutos)**. Julián pidió 2 minutos; la propuesta inicial eran 12 ciclos, unos 4 minutos.
+- Se mantiene la distancia variable entre nodos individuales (6, 14 y 24 cm, semilla fija, cada distancia dos veces). Si 4 nodos no caben a la distancia del ciclo, se usan menos nodos en vez de achicar la distancia. A 24 cm siempre quedan 3, porque 4 no caben en los 29,6 cm de alto.
+- Los nodos individuales quedan a 7 cm o más del nodo doble.
+- Se muestra el puntaje durante el juego y en los resultados.
+- «Cambio de fase» en el registro marca ahora el inicio de cada ciclo.
+
+**Motivo:** el código confirmó que, en la fase doble, el único nodo disponible exigía unirse, así que la unión era obligatoria y valía lo mismo que un nodo individual. Con la nueva hipótesis (09-11), unirse debe ser una elección. En 20 s no alcanza a hacerse todo unidos, así que conviene repartirse los nodos individuales y unirse para el doble.

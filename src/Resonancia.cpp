@@ -3,7 +3,7 @@
 void Resonancia::start() {
 	auto & s = settings().resonancia;
 	// Semilla fija: todas las sesiones ven la misma secuencia de distancias y nodos,
-	// lo que permite comparar grupos de forma cualitativa.
+	// lo que permite comparar parejas de forma cualitativa.
 	rng.seed(s.seed);
 
 	// Secuencia balanceada: cada distancia aparece las mismas veces (±1), en orden barajado.
@@ -17,74 +17,85 @@ void Resonancia::start() {
 	std::shuffle(spacingSequence.begin(), spacingSequence.end(), rng);
 
 	cycle = 0;
+	finished = false;
 	individualDone = individualTotal = doubleDone = doubleTotal = 0;
 	event("game_start");
-	startPhase(INDIVIDUAL);
+	startCycle();
 }
 
-void Resonancia::layoutIndividualNodes(int count, float spacing) {
+// Ubica `count` nodos como polígono regular de lado `spacing`, dentro de la pantalla y lejos
+// del nodo doble del centro. Devuelve false si no caben a esa distancia exacta.
+bool Resonancia::layoutIndividualNodes(int count, float spacing) {
 	auto & s = settings().resonancia;
 	float margin = cm(s.edgeMarginCm);
+	float clear = cm(s.centerClearCm);
+	glm::vec2 screenCenter(ofGetWidth() * 0.5f, ofGetHeight() * 0.5f);
 	std::uniform_real_distribution<float> angle(0, TWO_PI);
 	std::uniform_real_distribution<float> ux(margin, ofGetWidth() - margin);
 	std::uniform_real_distribution<float> uy(margin, ofGetHeight() - margin);
-
-	// Polígono regular de lado `spacing` (2 nodos: segmento; 3 nodos: triángulo).
 	float circumradius = count == 2 ? spacing * 0.5f : spacing / (2.0f * sin(PI / count));
 
-	for (float scale = 1.0f; scale > 0.3f; scale -= 0.1f) {
-		for (int attempt = 0; attempt < 200; ++attempt) {
-			glm::vec2 c(ux(rng), uy(rng));
-			float rot = angle(rng);
-			std::vector<glm::vec2> pts;
-			bool fits = true;
-			for (int i = 0; i < count; ++i) {
-				float a = rot + i * TWO_PI / count;
-				glm::vec2 p = c + glm::vec2(cos(a), sin(a)) * circumradius * scale;
-				if (p.x < margin || p.x > ofGetWidth() - margin || p.y < margin || p.y > ofGetHeight() - margin) fits = false;
-				pts.push_back(p);
-			}
-			if (!fits) continue;
-			for (auto & p : pts) {
-				Node n;
-				n.pos = p;
-				nodes.push_back(n);
-			}
-			if (scale < 1.0f) ofLogWarning("Resonancia") << "Distancia reducida al " << scale * 100 << "% para caber en pantalla";
-			return;
+	for (int attempt = 0; attempt < 2000; ++attempt) {
+		glm::vec2 c(ux(rng), uy(rng));
+		float rot = angle(rng);
+		std::vector<glm::vec2> pts;
+		bool fits = true;
+		for (int i = 0; i < count && fits; ++i) {
+			float a = rot + i * TWO_PI / count;
+			glm::vec2 p = c + glm::vec2(cos(a), sin(a)) * circumradius;
+			if (p.x < margin || p.x > ofGetWidth() - margin || p.y < margin || p.y > ofGetHeight() - margin) fits = false;
+			if (glm::distance(p, screenCenter) < clear) fits = false;
+			pts.push_back(p);
 		}
+		if (!fits) continue;
+		for (auto & p : pts) {
+			Node n;
+			n.pos = p;
+			nodes.push_back(n);
+		}
+		return true;
 	}
+	return false;
 }
 
-void Resonancia::startPhase(Phase p) {
-	phase = p;
-	phaseTime = 0;
+void Resonancia::startCycle() {
+	cycleTime = 0;
 	nodes.clear();
 
-	if (p == INDIVIDUAL) {
-		int count = countSequence[cycle];
-		float spacing = spacingSequence[cycle];
-		layoutIndividualNodes(count, cm(spacing));
-		individualTotal += (int)nodes.size();
-		event("phase_start", "ciclo=" + ofToString(cycle + 1) + " fase=individual nodos=" + ofToString(nodes.size())
-				+ " distanciaCm=" + ofToString(spacing));
-	} else if (p == DOUBLE) {
-		Node n;
-		n.pos = glm::vec2(ofGetWidth() * 0.5f, ofGetHeight() * 0.5f);
-		n.isDouble = true;
-		nodes.push_back(n);
-		doubleTotal += 1;
-		event("phase_start", "ciclo=" + ofToString(cycle + 1) + " fase=doble");
-	} else {
-		event("game_end", "individuales=" + ofToString(individualDone) + "/" + ofToString(individualTotal)
-				+ " dobles=" + ofToString(doubleDone) + "/" + ofToString(doubleTotal));
+	// Nodos individuales: si no caben a la distancia del ciclo, se usan menos nodos;
+	// la distancia nunca se achica (es la variable de interés).
+	float spacing = spacingSequence[cycle];
+	int count = countSequence[cycle];
+	while (count > 2 && !layoutIndividualNodes(count, cm(spacing)))
+		count--;
+	if (nodes.empty()) {
+		layoutIndividualNodes(2, cm(spacing));
+		ofLogWarning("Resonancia") << "No caben nodos a " << spacing << " cm";
 	}
+	individualTotal += (int)nodes.size();
+
+	// Nodo doble opcional, al centro
+	Node d;
+	d.pos = glm::vec2(ofGetWidth() * 0.5f, ofGetHeight() * 0.5f);
+	d.isDouble = true;
+	nodes.push_back(d);
+	doubleTotal += 1;
+
+	// "phase_start": el registro lo anota como "Cambio de fase" (salvo el primero, que coincide
+	// con el inicio del juego).
+	event("phase_start", "ciclo=" + ofToString(cycle + 1) + " nodos=" + ofToString((int)nodes.size() - 1)
+			+ " distanciaCm=" + ofToString(spacing));
+}
+
+float Resonancia::points() const {
+	auto & s = settings().resonancia;
+	return individualDone * s.individualValue + doubleDone * s.doubleValue;
 }
 
 void Resonancia::update(float dt, const TokenTracker & tracker) {
-	if (phase == FINISHED) return;
+	if (finished) return;
 	auto & s = settings().resonancia;
-	phaseTime += dt;
+	cycleTime += dt;
 	float radius = cm(s.activationRadiusCm);
 
 	for (auto & n : nodes) {
@@ -121,26 +132,27 @@ void Resonancia::update(float dt, const TokenTracker & tracker) {
 		}
 	}
 
-	float phaseLen = phase == INDIVIDUAL ? s.individualPhaseSec : s.doublePhaseSec;
-	if (phaseTime >= phaseLen) {
-		if (phase == INDIVIDUAL) {
-			startPhase(DOUBLE);
-		} else if (++cycle >= s.cycles) {
-			startPhase(FINISHED);
+	if (cycleTime >= s.cycleSec) {
+		if (++cycle >= s.cycles) {
+			finished = true;
+			nodes.clear();
+			event("game_end", "individuales=" + ofToString(individualDone) + "/" + ofToString(individualTotal)
+					+ " dobles=" + ofToString(doubleDone) + "/" + ofToString(doubleTotal) + " puntos=" + ofToString(points()));
 		} else {
-			startPhase(INDIVIDUAL);
+			startCycle();
 		}
 	}
 }
 
 void Resonancia::draw(const TokenTracker & tracker) {
-	if (phase == FINISHED) return;
+	if (finished) return;
 	auto & s = settings().resonancia;
 	float r = cm(s.nodeRadiusCm);
 	float now = ofGetElapsedTimef();
 
-	float phaseLen = phase == INDIVIDUAL ? s.individualPhaseSec : s.doublePhaseSec;
-	Ui::timerBar(1.0f - phaseTime / phaseLen, phase == INDIVIDUAL ? Ui::accent : Ui::accentJoined);
+	Ui::timerBar(1.0f - cycleTime / s.cycleSec, Ui::accent);
+	ofSetColor(255, 200);
+	Ui::text(num(points()), ofGetWidth() * 0.5f, cm(1.2f), 1);
 
 	ofPushStyle();
 	for (auto & n : nodes) {
@@ -176,27 +188,25 @@ void Resonancia::drawResults() {
 	float cx = ofGetWidth() * 0.5f;
 	float y = ofGetHeight() * 0.35f;
 	ofSetColor(255);
-	Ui::text("Nodos activados", cx, y, 2);
-	Ui::text("Individuales   " + ofToString(individualDone) + " de " + ofToString(individualTotal), cx, y + cm(3), 1);
-	Ui::text("Dobles   " + ofToString(doubleDone) + " de " + ofToString(doubleTotal), cx, y + cm(4.5f), 1);
+	Ui::text("Puntaje   " + num(points()), cx, y, 2);
+	Ui::text("Nodos individuales   " + ofToString(individualDone) + " de " + ofToString(individualTotal), cx, y + cm(3), 1);
+	Ui::text("Nodos dobles   " + ofToString(doubleDone) + " de " + ofToString(doubleTotal), cx, y + cm(4.5f), 1);
 }
 
 std::vector<std::string> Resonancia::instructions() const {
 	auto & s = settings().resonancia;
-	float minutes = s.cycles * (s.individualPhaseSec + s.doublePhaseSec) / 60.0f;
+	float minutes = s.cycles * s.cycleSec / 60.0f;
 	return {
-		"OBJETIVO: activar la mayor cantidad de nodos.",
+		"OBJETIVO: sumar puntos activando nodos.",
 		"",
-		"- Fase individual (barra naranja, " + num(s.individualPhaseSec) + " s): "
-			+ ofToString(s.minIndividualNodes) + "-" + ofToString(s.maxIndividualNodes) + " nodos de anillo simple.",
-		"  Se activan con 1 token encima durante " + num(s.fillSec) + " s.",
-		"- Fase doble (barra turquesa, " + num(s.doublePhaseSec) + " s): 1 nodo de anillo doble al centro.",
-		"  Se activa con los 2 tokens UNIDOS encima durante " + num(s.doubleFillSec) + " s.",
-		"- El nodo se llena mientras hay un token encima y se vacía",
-		"  de a poco si se retira.",
-		"- La distancia entre nodos individuales cambia en cada ciclo.",
+		"- Cada ciclo dura " + num(s.cycleSec) + " s (barra de arriba) y trae nodos nuevos.",
+		"- Nodos de anillo simple: se activan con 1 token encima durante " + num(s.fillSec) + " s.",
+		"  Valen " + num(s.individualValue) + " pt.",
+		"- Nodo de anillo doble (centro, opcional): se activa con los 2 tokens UNIDOS",
+		"  encima durante " + num(s.doubleFillSec) + " s. Vale " + num(s.doubleValue) + " pts.",
+		"- No alcanza el tiempo para hacerlo todo juntos: decidan cuándo repartirse.",
+		"- La distancia entre los nodos simples cambia en cada ciclo.",
 		"",
-		"GANAR: activar nodos; se cuentan individuales y dobles.",
-		ofToString(s.cycles) + " ciclos, unos " + num(std::round(minutes * 10) / 10) + " min.",
+		"GANAR: puntaje al terminar (" + ofToString(s.cycles) + " ciclos, " + num(std::round(minutes * 10) / 10) + " min).",
 	};
 }

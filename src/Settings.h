@@ -56,13 +56,17 @@ struct Settings {
 	} ensamblaje;
 
 	// --- Resonancia Dividida ---
+	// Cada ciclo: 3-4 nodos individuales (1 token) y 1 nodo doble opcional al centro (par unido),
+	// que vale más. El tiempo no alcanza para hacerlo todo unidos: conviene repartirse.
 	struct {
-		int cycles = 7;
-		float individualPhaseSec = 27.0f;
-		float doublePhaseSec = 18.0f;
-		int minIndividualNodes = 2;
-		int maxIndividualNodes = 3;
+		int cycles = 6;
+		float cycleSec = 20.0f; // 6 x 20 s = 2 min
+		int minIndividualNodes = 3;
+		int maxIndividualNodes = 4; // si no caben a la distancia del ciclo, se usan menos (la distancia no se achica)
 		std::vector<float> spacingsCm = { 6.0f, 14.0f, 24.0f }; // cerca / medio / lejos
+		float individualValue = 1.0f; // puntos por nodo individual
+		float doubleValue = 3.0f; // puntos por el nodo doble (opcional)
+		float centerClearCm = 7.0f; // los nodos individuales se mantienen a esta distancia del nodo doble
 		float nodeRadiusCm = 2.2f;
 		float activationRadiusCm = 3.5f;
 		float fillSec = 2.0f;

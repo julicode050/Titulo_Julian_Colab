@@ -66,8 +66,10 @@ void Settings::load(const std::string & path) {
 	if (j.contains("resonancia")) {
 		auto & r = j["resonancia"];
 		read(r, "cycles", resonancia.cycles);
-		read(r, "individualPhaseSec", resonancia.individualPhaseSec);
-		read(r, "doublePhaseSec", resonancia.doublePhaseSec);
+		read(r, "cycleSec", resonancia.cycleSec);
+		read(r, "individualValue", resonancia.individualValue);
+		read(r, "doubleValue", resonancia.doubleValue);
+		read(r, "centerClearCm", resonancia.centerClearCm);
 		read(r, "minIndividualNodes", resonancia.minIndividualNodes);
 		read(r, "maxIndividualNodes", resonancia.maxIndividualNodes);
 		read(r, "spacingsCm", resonancia.spacingsCm);
@@ -158,8 +160,10 @@ void Settings::save(const std::string & path) const {
 	};
 	j["resonancia"] = {
 		{ "cycles", resonancia.cycles },
-		{ "individualPhaseSec", resonancia.individualPhaseSec },
-		{ "doublePhaseSec", resonancia.doublePhaseSec },
+		{ "cycleSec", resonancia.cycleSec },
+		{ "individualValue", resonancia.individualValue },
+		{ "doubleValue", resonancia.doubleValue },
+		{ "centerClearCm", resonancia.centerClearCm },
 		{ "minIndividualNodes", resonancia.minIndividualNodes },
 		{ "maxIndividualNodes", resonancia.maxIndividualNodes },
 		{ "spacingsCm", resonancia.spacingsCm },

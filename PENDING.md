@@ -37,13 +37,11 @@ All values below live in `bin/data/settings.json` and can be changed without rec
 - [ ] A token picks up a piece by touching it (inside its shape, or within 2.5 cm of its centre). A token already resting on a piece when a cycle starts can't pick it up until it moves off it.
 - [ ] Success = **time per cycle**, shown after each figure. No time limit per cycle. 6 cycles with 3, 3, 4, 4, 5, 5 fragments, and a different shape each cycle.
 
-**Resonancia Dividida**
-- [ ] Activation radius 3.5 cm. Individual node fills in 2 s, double in 2.5 s. Fill drains at 0.25/s when the token leaves.
-- [ ] A joined pair can also activate individual nodes.
-- [ ] Completed nodes don't respawn within a phase.
-- [ ] Individual-node spacing is 6 / 14 / 24 cm, balanced across cycles and shuffled with a **fixed seed** (every session gets the same sequence). 2–3 nodes per cycle.
-- [ ] 7 cycles of 27 s individual + 18 s double (~5.3 min).
-- [ ] The double node activates when the joined pair's centre is within the activation radius.
+**Resonancia Dividida** (rules changed 2026-11-10, task 4)
+- [ ] **6 cycles of 20 s (2 min).** Each cycle shows **3–4 single nodes** (1 token, fill 2 s, **1 pt**) and **1 optional double node** at the centre (joined pair, fill 2.5 s, **3 pts**). The old separate "double phase" is gone, so joining is no longer forced.
+- [ ] Single-node spacing 6 / 14 / 24 cm, balanced (each twice) and shuffled with a **fixed seed**. If 4 nodes don't fit at a cycle's spacing (always the case at 24 cm), fewer nodes are used; the spacing is never shrunk. Single nodes stay ≥ 7 cm from the double node (`centerClearCm`).
+- [ ] Activation radius 3.5 cm; fill drains at 0.25/s when the token leaves. A joined pair can also activate single nodes. Completed nodes don't respawn within a cycle.
+- [ ] Calibrate in bodystorming whether 20 s per cycle really makes splitting up necessary, and the double node's value (3).
 
 **Marea de Presión**
 - [ ] Session 330 s. At most 3 points at once, a new one every 6–12 s. Each point lasts 40 s.
@@ -81,7 +79,7 @@ All values below live in `bin/data/settings.json` and can be changed without rec
 - [ ] **No fixed seed** for the starting piece positions **or the cut angles of the figures** (unlike Resonancia and Marea), so every session gets differently shaped pieces. With puzzle matching, difficulty depends on piece shape, so sessions aren't comparable. Fine for bodystorming; consider a fixed seed before sessions with participants. (Report 2026-10-04.)
 
 **Resonancia Dividida**
-- [ ] The session lasts ~5.3 min, slightly under the brief's 6–7 min. Raise `cycles` (e.g. to 8) if needed.
+- [x] ~~Session length vs. the brief's 6–7 min~~ → Julián set Resonancia to 2 min (2026-11-10).
 
 **Marea de Presión**
 - [ ] Calibrate the exact visual difference between low and high mode (currently colour, ring thickness and pulse speed).
@@ -108,10 +106,10 @@ All tasks are done on branch `tokens-v1` (Julián, 2026-11-10), merged into `mai
   - **Outside a game nothing goes to the main CSV.** Token appear/disappear goes to `<...>_tokens.csv` (Juego = «Menú» outside games).
   - `bin/data/registros/` is **excluded from Git**, so participants' data never goes to GitHub.
   - Verified with a simulated session. «Pieza fijada» wasn't exercised in that run.
-- [ ] Check at the table that the clock box (top-right, 7.5 × 1.9 cm) doesn't cover nodes or pressure points that spawn in that corner; if it does, keep games out of that area.
+- [ ] Check at the table that the clock box (top-right, 7.5 × 1.9 cm) and the score (top-centre, Marea and Resonancia) don't cover nodes or pressure points near the top edge; if they do, keep games out of those areas.
 - [x] **3. Marea** (2026-11-10): the pair now fills and scores **2.5×** a single token (0.125/s fill, 2.5 pts/s), and a point that empties costs **−10**, shown as a red "−10" over the lost point and in the results. Verified in the simulator. With one active point joining pays off (2.5 vs 1/s); with two, splitting up does (≈30 vs 27.5 over the ~15 s it takes the neglected point to empty).
 - [ ] Calibrate the Marea balance in bodystorming: check whether pairs really face a choice, and adjust `highScorePerSec`, `lostPointPenalty` and `decayPerSec` if they don't.
-- [ ] **4. Resonancia:** double nodes optional and worth more; less time or more nodes so splitting up is needed; keep 6 / 14 / 24 cm spacing with fixed seed.
+- [x] **4. Resonancia** (2026-11-10): one phase per cycle with 3–4 single nodes (1 pt) + 1 optional double node (3 pts); 6 cycles of 20 s = 2 min; spacing 6 / 14 / 24 cm kept (seeded, never shrunk). Score shown during the game and in the results. Verified in the simulator.
 - [ ] **5. Ensamblaje and game order:** one piece per union is already implemented (`ac5b32b`). Add a 4th menu button, **"Modo testeo"**, that runs the three games in a fixed order: Ensamblaje, Resonancia, Marea. The individual game buttons stay.
 - [ ] **6. Brief contact losses:** configurable tolerance for brief losses, individual and for the pair (today: 15 frames per token, separation confirmed after 10 frames), so re-gripping doesn't count as a separation.
 - [ ] **7. Real tokens:** verify pair recognition, calibrate `pairFitTolMm` / `interlockedTolMm`, then merge `tokens-v1` into `main`.
