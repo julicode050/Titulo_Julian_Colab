@@ -194,6 +194,7 @@ void TokenTracker::matchObservations(std::vector<Observation> & obs) {
 		tok.rawLetter = o.letter;
 		tok.visible = true;
 		tok.missingFrames = 0;
+		tok.lastSeen = ofGetElapsedTimef();
 
 		// Histéresis de etiqueta: la letra cruda puede parpadear entre frames.
 		if (o.label != "?" && o.label != tok.label) {
@@ -217,20 +218,22 @@ void TokenTracker::matchObservations(std::vector<Observation> & obs) {
 		auto & tok = tokens[t];
 		tok.visible = false;
 		tok.mergeId = -1;
-		if (++tok.missingFrames > settings().tokenGraceFrames) {
+		tok.missingFrames++;
+		if (ofGetElapsedTimef() - tok.lastSeen > settings().tokenLossToleranceSec) {
 			// Primero se rompen sus uniones, para que cada separación quede registrada.
+			// Ambos eventos llevan la hora en que el token dejó de verse, no la de la confirmación.
 			for (auto it = pairs.begin(); it != pairs.end();) {
 				if (it->first.first == tok.uid || it->first.second == tok.uid) {
 					if (it->second.joined) {
 						int other = it->first.first == tok.uid ? it->first.second : it->first.first;
-						emit(TokenEventArgs::SEPARATED, tok, findToken(other));
+						emit(TokenEventArgs::SEPARATED, tok, findToken(other), tok.lastSeen);
 					}
 					it = pairs.erase(it);
 				} else {
 					++it;
 				}
 			}
-			emit(TokenEventArgs::REMOVED, tok);
+			emit(TokenEventArgs::REMOVED, tok, nullptr, tok.lastSeen);
 			tokens.erase(tokens.begin() + t);
 		}
 	}
@@ -264,15 +267,27 @@ void TokenTracker::updatePairs() {
 
 			auto key = std::make_pair(std::min(a.uid, b.uid), std::max(a.uid, b.uid));
 			auto & st = pairs[key];
-			if (raw == st.joined) {
-				st.counter = 0;
-				continue;
-			}
-			int needed = st.joined ? settings().separateConfirmFrames : settings().joinConfirmFrames;
-			if (++st.counter >= needed) {
-				st.joined = raw;
-				st.counter = 0;
-				emit(raw ? TokenEventArgs::JOINED : TokenEventArgs::SEPARATED, a, &b);
+			if (!st.joined) {
+				// Unión: se confirma tras unos frames seguidos encajados.
+				st.counter = raw ? st.counter + 1 : 0;
+				if (st.counter >= settings().joinConfirmFrames) {
+					st.joined = true;
+					st.counter = 0;
+					st.apartSince = -1;
+					emit(TokenEventArgs::JOINED, a, &b);
+				}
+			} else if (raw) {
+				st.apartSince = -1; // volvieron a verse encajados dentro de la tolerancia
+			} else {
+				// Separación: solo si siguen sin encaje más que la tolerancia del par;
+				// se registra con la hora en que dejaron de verse encajados.
+				float now = ofGetElapsedTimef();
+				if (st.apartSince < 0) st.apartSince = now;
+				if (now - st.apartSince >= settings().pairLossToleranceSec) {
+					st.joined = false;
+					emit(TokenEventArgs::SEPARATED, a, &b, st.apartSince);
+					st.apartSince = -1;
+				}
 			}
 		}
 	}
@@ -323,7 +338,7 @@ int TokenTracker::groupIndexOf(int uid) const {
 	return -1;
 }
 
-void TokenTracker::emit(TokenEventArgs::Type type, const TrackedToken & a, const TrackedToken * b) {
+void TokenTracker::emit(TokenEventArgs::Type type, const TrackedToken & a, const TrackedToken * b, float time) {
 	TokenEventArgs args;
 	args.type = type;
 	args.uidA = a.uid;
@@ -334,7 +349,7 @@ void TokenTracker::emit(TokenEventArgs::Type type, const TrackedToken & a, const
 		args.labelB = b->label;
 		args.pos = (a.pos + b->pos) * 0.5f;
 	}
-	args.time = ofGetElapsedTimef();
+	args.time = time >= 0 ? time : ofGetElapsedTimef();
 	ofNotifyEvent(Events::token(), args);
 }
 

@@ -103,7 +103,8 @@ void Marea::update(float dt, const TokenTracker & tracker) {
 		}
 		if (mode == NONE) {
 			for (auto & t : tracker.getTokens())
-				if (t.visible && glm::distance(t.pos, p.pos) < hold) mode = LOW;
+				// Un token que desapareció hace poco (tolerancia) sigue contando en su última posición.
+				if (glm::distance(t.pos, p.pos) < hold) mode = LOW;
 		}
 		if (mode != p.mode) {
 			const char * names[] = { "ninguno", "bajo", "alto" };

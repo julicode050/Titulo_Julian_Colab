@@ -20,6 +20,7 @@ public:
 		glm::vec2 pos; // centroide en px
 		bool visible = true; // false mientras está en periodo de gracia
 		int missingFrames = 0;
+		float lastSeen = 0; // segundos (ofGetElapsedTimef) de la última vez que se vio
 		int mergeId = -1; // >= 0 si este frame vino de un grupo de puntos fusionado
 		std::vector<ofVec2f> points;
 		std::string pendingLabel;
@@ -53,7 +54,8 @@ private:
 	};
 	struct PairState {
 		bool joined = false;
-		int counter = 0;
+		int counter = 0; // frames seguidos encajados (para confirmar una unión)
+		float apartSince = -1; // desde cuándo dejaron de verse encajados (-1 = encajados)
 	};
 
 	std::vector<Observation> observe(const std::vector<ofVec2f> & pts);
@@ -62,7 +64,7 @@ private:
 	void matchObservations(std::vector<Observation> & obs);
 	void updatePairs();
 	void rebuildGroups();
-	void emit(TokenEventArgs::Type type, const TrackedToken & a, const TrackedToken * b = nullptr);
+	void emit(TokenEventArgs::Type type, const TrackedToken & a, const TrackedToken * b = nullptr, float time = -1);
 
 	const Token * classifier = nullptr;
 	std::vector<TrackedToken> tokens;

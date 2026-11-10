@@ -13,9 +13,11 @@ struct Settings {
 	float clusterThresholdPx = 150.0f; // puntos más cercanos que esto pertenecen al mismo grupo
 	int joinedMinPoints = 6; // un grupo con >= estos puntos es un par de tokens unidos
 	float joinDistanceCm = 0.0f; // dos tokens separados cuyos centros están más cerca que esto cuentan como unidos (0 = desactivado)
-	int tokenGraceFrames = 15; // frames que un token puede desaparecer sin considerarse retirado
+	// Pérdidas breves de contacto (p. ej. reacomodar la mano): durante la tolerancia el token sigue
+	// contando en su última posición, y la separación o desaparición se registra con la hora en que empezó.
+	float tokenLossToleranceSec = 0.5f; // un token puede desaparecer este tiempo sin contar como retirado
+	float pairLossToleranceSec = 0.75f; // tiempo sin encaje antes de contar el par como separado
 	int joinConfirmFrames = 5; // frames seguidos para confirmar una unión
-	int separateConfirmFrames = 10; // frames seguidos para confirmar una separación
 	int labelConfirmFrames = 10; // frames seguidos para cambiar la etiqueta de un token
 	float trackMaxJumpCm = 8.0f; // salto máximo por frame para seguir siendo el mismo token
 	// Etiqueta de cada token físico -> letras que el clasificador puede devolver para él.

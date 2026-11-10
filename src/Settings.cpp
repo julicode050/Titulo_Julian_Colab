@@ -29,9 +29,9 @@ void Settings::load(const std::string & path) {
 		read(d, "clusterThresholdPx", clusterThresholdPx);
 		read(d, "joinedMinPoints", joinedMinPoints);
 		read(d, "joinDistanceCm", joinDistanceCm);
-		read(d, "tokenGraceFrames", tokenGraceFrames);
+		read(d, "tokenLossToleranceSec", tokenLossToleranceSec);
+		read(d, "pairLossToleranceSec", pairLossToleranceSec);
 		read(d, "joinConfirmFrames", joinConfirmFrames);
-		read(d, "separateConfirmFrames", separateConfirmFrames);
 		read(d, "labelConfirmFrames", labelConfirmFrames);
 		read(d, "trackMaxJumpCm", trackMaxJumpCm);
 		read(d, "tokenLetters", tokenLetters);
@@ -130,9 +130,9 @@ void Settings::save(const std::string & path) const {
 		{ "clusterThresholdPx", clusterThresholdPx },
 		{ "joinedMinPoints", joinedMinPoints },
 		{ "joinDistanceCm", joinDistanceCm },
-		{ "tokenGraceFrames", tokenGraceFrames },
+		{ "tokenLossToleranceSec", tokenLossToleranceSec },
+		{ "pairLossToleranceSec", pairLossToleranceSec },
 		{ "joinConfirmFrames", joinConfirmFrames },
-		{ "separateConfirmFrames", separateConfirmFrames },
 		{ "labelConfirmFrames", labelConfirmFrames },
 		{ "trackMaxJumpCm", trackMaxJumpCm },
 		{ "tokenLetters", tokenLetters },

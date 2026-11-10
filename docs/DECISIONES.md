@@ -200,3 +200,13 @@ Valores aprobados por Julián; quedan por calibrar en bodystorming.
 ### 2026-11-10 · "Modo testeo": los tres juegos seguidos en orden fijo
 **Decisión:** cuarto botón en el menú (y tecla 4) que corre Ensamblaje → Resonancia → Marea. Entre un juego y otro se muestran sus resultados durante 8 s con una cuenta regresiva; después del último se vuelve al menú. El orden y la pausa están en `settings.json`. Los botones de cada juego por separado se mantienen. Elegir un juego a mano, o presionar M o N, sale del modo testeo. Se confirmó en el código que Ensamblaje fija una pieza por unión; no se modificó.
 **Motivo:** tarea 5 del plan del 09-11. Julián pidió mantener el menú y sumar el modo testeo como cuarta opción.
+
+### 2026-11-10 · Tolerancia a pérdidas breves de contacto, en segundos
+**Decisión:**
+- Las tolerancias pasan de cuadros a segundos y quedan en `settings.json`:
+  - **0,5 s** para un token: puede desaparecer ese tiempo sin contar como retirado (antes 15 cuadros, ~0,25 s);
+  - **0,75 s** para el par: tiempo sin encaje antes de contarse como separado (antes 10 cuadros, ~0,17 s).
+- Mientras dura la tolerancia, el token sigue contando en su última posición en los tres juegos. Antes, en Resonancia el nodo empezaba a vaciarse y en Marea el punto perdía el modo bajo de inmediato.
+- Las desapariciones y separaciones confirmadas se registran con la hora en que **empezaron**, para coincidir con el video.
+
+**Motivo:** tarea 6 del plan del 09-11: que reacomodar la mano no cuente como separación, porque eso contaminaría la comparación entre trabajo encajado y separado. Los valores son provisorios hasta probarlos con los tokens reales.

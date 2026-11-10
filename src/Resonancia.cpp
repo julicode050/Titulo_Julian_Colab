@@ -109,7 +109,8 @@ void Resonancia::update(float dt, const TokenTracker & tracker) {
 		} else {
 			// Cualquier token sirve, solo o unido
 			for (auto & t : tracker.getTokens()) {
-				if (!t.visible || glm::distance(t.pos, n.pos) >= radius) continue;
+				// Un token que desapareció hace poco (tolerancia) sigue contando en su última posición.
+				if (glm::distance(t.pos, n.pos) >= radius) continue;
 				int g = tracker.groupIndexOf(t.uid);
 				bool joined = g >= 0 && tracker.getGroups()[g].isJoined();
 				if (!active) n.actor = joined ? "Par" : t.label;

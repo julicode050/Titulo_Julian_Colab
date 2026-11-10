@@ -8,12 +8,12 @@
         "joinedMinPoints": 6,
         "labelConfirmFrames": 10,
         "pairFitTolMm": 2.5,
-        "separateConfirmFrames": 10,
-        "tokenGraceFrames": 15,
+        "pairLossToleranceSec": 0.75,
         "tokenLetters": {
             "A": "A",
             "B": "BCE"
         },
+        "tokenLossToleranceSec": 0.5,
         "tokenSidesMm": {
             "A": [
                 30.0,
