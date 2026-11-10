@@ -31,6 +31,9 @@ struct Settings {
 
 	// --- Menú ---
 	float menuDwellSec = 1.5f;
+	// Modo testeo: juegos seguidos en este orden, con sus resultados visibles unos segundos entre uno y otro.
+	std::vector<std::string> testOrder = { "ensamblaje", "resonancia", "marea" };
+	float testResultsSec = 8.0f;
 
 	// --- Registro de eventos (CSV por sesión, para Excel en español) ---
 	struct {

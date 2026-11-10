@@ -196,3 +196,7 @@ Valores aprobados por Julián; quedan por calibrar en bodystorming.
 - «Cambio de fase» en el registro marca ahora el inicio de cada ciclo.
 
 **Motivo:** el código confirmó que, en la fase doble, el único nodo disponible exigía unirse, así que la unión era obligatoria y valía lo mismo que un nodo individual. Con la nueva hipótesis (09-11), unirse debe ser una elección. En 20 s no alcanza a hacerse todo unidos, así que conviene repartirse los nodos individuales y unirse para el doble.
+
+### 2026-11-10 · "Modo testeo": los tres juegos seguidos en orden fijo
+**Decisión:** cuarto botón en el menú (y tecla 4) que corre Ensamblaje → Resonancia → Marea. Entre un juego y otro se muestran sus resultados durante 8 s con una cuenta regresiva; después del último se vuelve al menú. El orden y la pausa están en `settings.json`. Los botones de cada juego por separado se mantienen. Elegir un juego a mano, o presionar M o N, sale del modo testeo. Se confirmó en el código que Ensamblaje fija una pieza por unión; no se modificó.
+**Motivo:** tarea 5 del plan del 09-11. Julián pidió mantener el menú y sumar el modo testeo como cuarta opción.

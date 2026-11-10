@@ -30,16 +30,19 @@ void ofApp::setup() {
 }
 
 void ofApp::layoutButtons() {
-	float w = settings().cm(13.0f);
+	// Un botón por juego y un cuarto, "Modo testeo", que los corre seguidos.
+	int count = (int)games.size() + 1;
+	float w = settings().cm(11.0f);
 	float h = settings().cm(5.0f);
-	float gap = settings().cm(1.5f);
-	float total = games.size() * w + (games.size() - 1) * gap;
+	float gap = settings().cm(1.2f);
+	float total = count * w + (count - 1) * gap;
 	float x = (ofGetWidth() - total) * 0.5f;
 	float y = ofGetHeight() * 0.5f - h * 0.5f;
 
 	menuButtons.clear();
 	for (size_t i = 0; i < games.size(); ++i)
 		menuButtons.push_back({ ofRectangle(x + i * (w + gap), y, w, h), games[i]->title() });
+	menuButtons.push_back({ ofRectangle(x + games.size() * (w + gap), y, w, h), "Modo testeo" });
 
 	resultButtons = { { ofRectangle(ofGetWidth() * 0.5f - w * 0.5f, ofGetHeight() * 0.75f, w, h * 0.7f), "Volver al menú" } };
 }
@@ -71,16 +74,32 @@ void ofApp::update() {
 
 	if (state == APP_MENU) {
 		int chosen = updateDwell(menuButtons, dt);
-		if (chosen >= 0) startGame(chosen);
+		if (chosen == (int)games.size())
+			startTestMode();
+		else if (chosen >= 0)
+			startGame(chosen);
 	} else if (state == APP_PLAYING) {
 		games[currentGame]->update(dt, tracker);
 		if (games[currentGame]->isFinished()) {
 			state = APP_RESULTS;
+			resultsTime = 0;
 			for (auto & b : resultButtons)
 				b.dwell = 0;
 		}
 	} else if (state == APP_RESULTS) {
-		if (updateDwell(resultButtons, dt) >= 0) goToMenu();
+		resultsTime += dt;
+		if (testMode) {
+			// Modo testeo: tras unos segundos de resultados, sigue el próximo juego (o vuelve al menú)
+			if (resultsTime >= settings().testResultsSec) {
+				testStep++;
+				if (!startTestStep()) {
+					testMode = false;
+					goToMenu();
+				}
+			}
+		} else if (updateDwell(resultButtons, dt) >= 0) {
+			goToMenu();
+		}
 	}
 }
 
@@ -101,6 +120,28 @@ int ofApp::updateDwell(std::vector<Button> & buttons, float dt) {
 
 void ofApp::abortGameIfRunning() {
 	if (state == APP_PLAYING) Events::notifyGame(games[currentGame]->id(), "game_aborted");
+}
+
+void ofApp::startTestMode() {
+	if (state == APP_SESSION_START) return;
+	testMode = true;
+	testStep = 0;
+	if (!startTestStep()) testMode = false;
+}
+
+bool ofApp::startTestStep() {
+	auto & order = settings().testOrder;
+	while (testStep < (int)order.size()) {
+		for (int i = 0; i < (int)games.size(); ++i) {
+			if (games[i]->id() == order[testStep]) {
+				startGame(i);
+				return true;
+			}
+		}
+		ofLogWarning("ofApp") << "Juego desconocido en testOrder: " << order[testStep];
+		testStep++;
+	}
+	return false;
 }
 
 void ofApp::startGame(int index) {
@@ -146,7 +187,20 @@ void ofApp::draw() {
 		games[currentGame]->draw(tracker);
 	} else if (state == APP_RESULTS) {
 		games[currentGame]->drawResults();
-		drawButtons(resultButtons);
+		if (testMode) {
+			// En modo testeo no hay botón: cuenta regresiva al próximo juego
+			auto & order = settings().testOrder;
+			int left = std::max(0, (int)std::ceil(settings().testResultsSec - resultsTime));
+			std::string next;
+			for (auto & g : games)
+				if (testStep + 1 < (int)order.size() && g->id() == order[testStep + 1]) next = g->title();
+			ofSetColor(Ui::neutral);
+			Ui::text(next.empty() ? "Fin del modo testeo. Volviendo al menú en " + ofToString(left) + " s"
+								  : "Siguiente: " + next + " en " + ofToString(left) + " s",
+				ofGetWidth() * 0.5f, ofGetHeight() * 0.8f, 1);
+		} else {
+			drawButtons(resultButtons);
+		}
 	}
 	if (state != APP_PLAYING) Minigame::drawTokens(tracker);
 
@@ -201,7 +255,8 @@ void ofApp::drawInstructionsPanel() {
 	if (state == APP_MENU || currentGame < 0) {
 		lines = { "INSTRUCCIONES (I para ocultar)", "",
 			"Elige un minijuego para ver sus instrucciones:",
-			"teclas 1/2/3, clic, o un token 1,5 s sobre el boton." };
+			"teclas 1/2/3, clic, o un token 1,5 s sobre el boton.",
+			"Modo testeo (tecla 4): los tres juegos seguidos, en orden fijo." };
 	} else {
 		lines = games[currentGame]->instructions();
 		lines.insert(lines.begin(), { "INSTRUCCIONES: " + ofToUpper(games[currentGame]->title()) + " (I para ocultar)", "" });
@@ -263,7 +318,7 @@ void ofApp::drawDebugPanel() {
 		if (g.isJoined()) joined++;
 	lines.push_back("Grupos unidos: " + ofToString(joined));
 	lines.push_back("");
-	lines.push_back("1/2/3 juego | M menu | R reiniciar | S simulador | I instrucciones | P diagnostico | N nueva sesion | F pantalla completa");
+	lines.push_back("1/2/3 juego | 4 modo testeo | M menu | R reiniciar | S simulador | I instrucciones | P diagnostico | N nueva sesion | F pantalla completa");
 
 	ofPushStyle();
 	int y = 24;
@@ -312,10 +367,15 @@ void ofApp::keyPressed(int key) {
 	case '1':
 	case '2':
 	case '3':
+		testMode = false; // elegir un juego a mano sale del modo testeo
 		startGame(key - '1');
+		break;
+	case '4':
+		startTestMode();
 		break;
 	case 'm':
 	case 'M':
+		testMode = false;
 		goToMenu();
 		break;
 	case 'r':
@@ -332,6 +392,7 @@ void ofApp::keyPressed(int key) {
 		break;
 	case 'n':
 	case 'N': // nueva sesión: cierra el registro actual y pide otro código
+		testMode = false;
 		abortGameIfRunning();
 		session.stop();
 		typedCode.clear();
@@ -366,10 +427,14 @@ void ofApp::mousePressed(int x, int y, int button) {
 	if (state == APP_PLAYING) return;
 	for (int i = 0; i < (int)buttons.size(); ++i) {
 		if (!buttons[i].rect.inside(x, y)) continue;
-		if (state == APP_MENU)
+		if (state == APP_MENU && i == (int)games.size())
+			startTestMode();
+		else if (state == APP_MENU)
 			startGame(i);
-		else
+		else {
+			testMode = false;
 			goToMenu();
+		}
 		return;
 	}
 }

@@ -49,6 +49,8 @@ void Settings::load(const std::string & path) {
 	}
 	if (j.contains("menu")) {
 		read(j["menu"], "dwellSec", menuDwellSec);
+		read(j["menu"], "testOrder", testOrder);
+		read(j["menu"], "testResultsSec", testResultsSec);
 	}
 	if (j.contains("ensamblaje")) {
 		auto & e = j["ensamblaje"];
@@ -139,7 +141,7 @@ void Settings::save(const std::string & path) const {
 		{ "interlockedCentroidDistMm", interlockedCentroidDistMm },
 		{ "interlockedTolMm", interlockedTolMm },
 	};
-	j["menu"] = { { "dwellSec", menuDwellSec } };
+	j["menu"] = { { "dwellSec", menuDwellSec }, { "testOrder", testOrder }, { "testResultsSec", testResultsSec } };
 	j["registro"] = {
 		{ "separator", registro.separator },
 		{ "decimal", registro.decimal },

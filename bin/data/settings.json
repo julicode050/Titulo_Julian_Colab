@@ -76,7 +76,13 @@
         "startFill": 0.6
     },
     "menu": {
-        "dwellSec": 1.5
+        "dwellSec": 1.5,
+        "testOrder": [
+            "ensamblaje",
+            "resonancia",
+            "marea"
+        ],
+        "testResultsSec": 8.0
     },
     "pantalla": {
         "pxPerCm": 36.43

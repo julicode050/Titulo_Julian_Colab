@@ -51,7 +51,7 @@ All values below live in `bin/data/settings.json` and can be changed without rec
 - [ ] Fusion: 2 points closer than 8 cm merge when a joined group of ≥ `fusionMinTokens` (4) covers both. Never happens with 2 people (expected).
 
 **General**
-- [ ] Menu buttons are chosen by holding a token on them for 1.5 s (or a mouse click / keys 1–3).
+- [ ] Menu buttons are chosen by holding a token on them for 1.5 s (or a mouse click / keys 1–4). Four buttons: the three games and "Modo testeo".
 - [ ] On-screen text faces one side of the table only.
 
 ## 4. Screen measurements
@@ -110,7 +110,7 @@ All tasks are done on branch `tokens-v1` (Julián, 2026-11-10), merged into `mai
 - [x] **3. Marea** (2026-11-10): the pair now fills and scores **2.5×** a single token (0.125/s fill, 2.5 pts/s), and a point that empties costs **−10**, shown as a red "−10" over the lost point and in the results. Verified in the simulator. With one active point joining pays off (2.5 vs 1/s); with two, splitting up does (≈30 vs 27.5 over the ~15 s it takes the neglected point to empty).
 - [ ] Calibrate the Marea balance in bodystorming: check whether pairs really face a choice, and adjust `highScorePerSec`, `lostPointPenalty` and `decayPerSec` if they don't.
 - [x] **4. Resonancia** (2026-11-10): one phase per cycle with 3–4 single nodes (1 pt) + 1 optional double node (3 pts); 6 cycles of 20 s = 2 min; spacing 6 / 14 / 24 cm kept (seeded, never shrunk). Score shown during the game and in the results. Verified in the simulator.
-- [ ] **5. Ensamblaje and game order:** one piece per union is already implemented (`ac5b32b`). Add a 4th menu button, **"Modo testeo"**, that runs the three games in a fixed order: Ensamblaje, Resonancia, Marea. The individual game buttons stay.
+- [x] **5. Ensamblaje and game order** (2026-11-10): one piece per union confirmed in the code (plus puzzle matching), unchanged. New 4th menu button **"Modo testeo"** (also key **4**) runs Ensamblaje → Resonancia → Marea; after each game its results show for **8 s** with a countdown, then the next starts by itself; after the last one it goes back to the menu. Order and seconds in `settings.json` (`menu.testOrder`, `menu.testResultsSec`). Choosing a game by hand, M, or N leaves the test mode. Verified in the simulator.
 - [ ] **6. Brief contact losses:** configurable tolerance for brief losses, individual and for the pair (today: 15 frames per token, separation confirmed after 10 frames), so re-gripping doesn't count as a separation.
 - [ ] **7. Real tokens:** verify pair recognition, calibrate `pairFitTolMm` / `interlockedTolMm`, then merge `tokens-v1` into `main`.
 - [ ] **8. Report** at the end of each working day.

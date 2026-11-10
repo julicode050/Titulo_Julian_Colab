@@ -46,6 +46,8 @@ private:
 	void drawClock();
 	void drawSessionStart();
 	void abortGameIfRunning();
+	void startTestMode();
+	bool startTestStep(); // inicia el juego del paso actual; false si ya no quedan
 
 	// --- Input & Tracking ---
 	Token token; // recepción TUIO y clasificación de formas
@@ -64,5 +66,8 @@ private:
 	std::vector<Button> resultButtons;
 	bool showDebug = true;
 	bool showInstructions = false;
+	bool testMode = false; // "Modo testeo": los juegos seguidos en orden fijo
+	int testStep = 0;
+	float resultsTime = 0;
 	size_t contactCount = 0; // puntos de contacto crudos del último frame
 };
