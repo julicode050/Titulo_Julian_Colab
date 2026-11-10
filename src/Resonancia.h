@@ -26,6 +26,7 @@ private:
 		float fill = 0;
 		bool completed = false;
 		float completedAt = -1;
+		std::string actor = "No aplica"; // quién lo estaba activando: "A", "B" o "Par"
 	};
 
 	void startPhase(Phase p);

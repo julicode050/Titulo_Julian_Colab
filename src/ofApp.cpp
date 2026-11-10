@@ -19,6 +19,7 @@ void ofApp::setup() {
 	token.setup(ofVec2f(0, 0));
 	tracker.setup(&token);
 	diagnostic.setup();
+	session.setup();
 	simulator.setup();
 
 	games.push_back(std::make_unique<Ensamblaje>());
@@ -98,14 +99,21 @@ int ofApp::updateDwell(std::vector<Button> & buttons, float dt) {
 	return -1;
 }
 
+void ofApp::abortGameIfRunning() {
+	if (state == APP_PLAYING) Events::notifyGame(games[currentGame]->id(), "game_aborted");
+}
+
 void ofApp::startGame(int index) {
+	if (state == APP_SESSION_START) return; // primero el código de la pareja
+	abortGameIfRunning(); // reiniciar o cambiar de juego a la mitad cuenta como interrumpido
 	currentGame = index;
 	state = APP_PLAYING;
 	games[index]->start();
 }
 
 void ofApp::goToMenu() {
-	if (state == APP_PLAYING) Events::notifyGame(games[currentGame]->id(), "game_aborted");
+	if (state == APP_SESSION_START) return;
+	abortGameIfRunning();
 	state = APP_MENU;
 	for (auto & b : menuButtons)
 		b.dwell = 0;
@@ -113,6 +121,8 @@ void ofApp::goToMenu() {
 
 //--------------------------------------------------------------
 void ofApp::exit() {
+	abortGameIfRunning();
+	session.exit();
 	diagnostic.exit();
 }
 
@@ -122,6 +132,11 @@ void ofApp::draw() {
 	if (diagnostic.active) {
 		diagnostic.draw(tracker);
 		simulator.draw();
+		drawClock();
+		return;
+	}
+	if (state == APP_SESSION_START) {
+		drawSessionStart();
 		return;
 	}
 
@@ -142,6 +157,31 @@ void ofApp::draw() {
 		drawDebugPanel();
 	}
 	if (showInstructions) drawInstructionsPanel();
+	drawClock();
+}
+
+// Reloj de la sesión en la esquina superior derecha, grande para que lo lea la cámara cenital.
+void ofApp::drawClock() {
+	if (!session.started()) return;
+	float w = settings().cm(7.5f), h = settings().cm(1.9f);
+	ofRectangle box(ofGetWidth() - w - 12, 12, w, h);
+	ofPushStyle();
+	ofFill();
+	ofSetColor(0, 0, 0, 220);
+	ofDrawRectRounded(box, 8);
+	ofSetColor(255);
+	Ui::text(session.pairCode() + "  " + session.clockText(), box.getCenter().x, box.getCenter().y, 2);
+	ofPopStyle();
+}
+
+void ofApp::drawSessionStart() {
+	float cx = ofGetWidth() * 0.5f, cy = ofGetHeight() * 0.5f;
+	ofSetColor(255);
+	Ui::text("Código de la pareja", cx, cy - settings().cm(3.0f), 1);
+	std::string shown = typedCode.empty() ? "_" : typedCode + ((int)(ofGetElapsedTimef() * 2) % 2 ? "_" : " ");
+	Ui::text(shown, cx, cy, 2);
+	ofSetColor(Ui::neutral);
+	Ui::text("Enter para comenzar la sesión (inicia el reloj y el registro)", cx, cy + settings().cm(3.0f), 0);
 }
 
 // La fuente bitmap del panel de debug no tiene tildes: se reemplazan por letras simples.
@@ -175,7 +215,7 @@ void ofApp::drawInstructionsPanel() {
 	float x = ofGetWidth() - 16 - maxChars * 8; // la fuente bitmap mide 8 px por carácter
 
 	ofPushStyle();
-	int y = 24;
+	int y = session.started() ? 24 + (int)settings().cm(1.9f) + 12 : 24; // debajo del reloj
 	for (auto & l : lines) {
 		if (!l.empty()) ofDrawBitmapStringHighlight(l, x, y, ofColor(0, 0, 0, 180), ofColor(255));
 		y += 18;
@@ -223,7 +263,7 @@ void ofApp::drawDebugPanel() {
 		if (g.isJoined()) joined++;
 	lines.push_back("Grupos unidos: " + ofToString(joined));
 	lines.push_back("");
-	lines.push_back("1/2/3 juego | M menu | R reiniciar | S simulador | I instrucciones | P diagnostico | F pantalla completa");
+	lines.push_back("1/2/3 juego | M menu | R reiniciar | S simulador | I instrucciones | P diagnostico | N nueva sesion | F pantalla completa");
 
 	ofPushStyle();
 	int y = 24;
@@ -255,6 +295,17 @@ void ofApp::drawButtons(const std::vector<Button> & buttons) {
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key) {
+	if (state == APP_SESSION_START) {
+		if (key == OF_KEY_RETURN) {
+			session.start(typedCode.empty() ? "SIN_CODIGO" : typedCode);
+			state = APP_MENU;
+		} else if (key == OF_KEY_BACKSPACE || key == OF_KEY_DEL) {
+			if (!typedCode.empty()) typedCode.pop_back();
+		} else if (key < 128 && (isalnum(key) || key == '-' || key == '_') && typedCode.size() < 12) {
+			typedCode += (char)toupper(key);
+		}
+		return;
+	}
 	if (simulator.keyPressed(key)) return;
 
 	switch (key) {
@@ -278,6 +329,14 @@ void ofApp::keyPressed(int key) {
 	case 'i':
 	case 'I':
 		showInstructions = !showInstructions;
+		break;
+	case 'n':
+	case 'N': // nueva sesión: cierra el registro actual y pide otro código
+		abortGameIfRunning();
+		session.stop();
+		typedCode.clear();
+		diagnostic.active = false;
+		state = APP_SESSION_START;
 		break;
 	case 'p':
 	case 'P':

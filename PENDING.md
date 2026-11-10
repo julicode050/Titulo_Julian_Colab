@@ -100,7 +100,15 @@ New hypothesis: a pair's interaction quality is higher when working with the tok
 All tasks are done on branch `tokens-v1` (Julián, 2026-11-10), merged into `main` in task 7.
 
 - [x] **1. Diagnostic mode** (2026-11-10): **P** key. Raw contacts with stable numbers and positions in mm, distances between contacts (centre to centre and edge to edge), min/max contacts in the last 5 s, counts of appearances / disappearances / brief contacts (< 0.5 s), what the system recognizes (A, B read as E, interlocked pair), and a timed log of contact and token events. **C** resets the counters. No game runs while it's on. Verified in the simulator; still to use with the real probes.
-- [ ] **2. Event log and session clock:** pair code at session start; one session clock in mm:ss visible to the overhead camera; one CSV per session `Pareja;Juego;t (s);Evento;Token` with fixed event texts; `;` separator, decimal comma, UTF-8 with BOM (separator and decimal configurable); optional separate file with token appear/disappear.
+- [x] **2. Event log and session clock** (2026-11-10):
+  - **Session start:** the app opens asking for the pair code (typed, Enter). The session clock starts there and shows `P01 mm:ss` in the **top-right corner**. **N** closes the session and asks for a new code.
+  - **CSV:** one file per session in `bin/data/registros/<code>_<date-time>.csv`, `Pareja;Juego;t (s);Evento;Token`, UTF-8 with BOM. Separator, decimal and folder are in `settings.json` → `registro`.
+  - **Events → token:** Inicio / Fin de juego (No aplica), Unión / Separación voluntaria (Par), Pieza fijada (Par), Nodo completado (A, B or Par), Punto perdido (only when a point empties, not when it expires), Cambio de fase (Resonancia, not counting the first phase).
+  - **Extra event, asked by Julián: «Juego interrumpido»** when a game is left halfway (M, R, another game, N or quitting the app).
+  - **Outside a game nothing goes to the main CSV.** Token appear/disappear goes to `<...>_tokens.csv` (Juego = «Menú» outside games).
+  - `bin/data/registros/` is **excluded from Git**, so participants' data never goes to GitHub.
+  - Verified with a simulated session. «Pieza fijada» wasn't exercised in that run.
+- [ ] Check at the table that the clock box (top-right, 7.5 × 1.9 cm) doesn't cover nodes or pressure points that spawn in that corner; if it does, keep games out of that area.
 - [ ] **3. Marea:** pair currently fills 3× gross (11× net after decay) and scores 4× a single token, and losing a point costs nothing. Target: pair ≈ 2.5× a single token and a cost for losing a point, values in settings.json.
 - [ ] **4. Resonancia:** double nodes optional and worth more; less time or more nodes so splitting up is needed; keep 6 / 14 / 24 cm spacing with fixed seed.
 - [ ] **5. Ensamblaje and game order:** one piece per union is already implemented (`ac5b32b`). Add a 4th menu button, **"Modo testeo"**, that runs the three games in a fixed order: Ensamblaje, Resonancia, Marea. The individual game buttons stay.

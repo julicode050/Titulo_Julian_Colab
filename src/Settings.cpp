@@ -40,6 +40,13 @@ void Settings::load(const std::string & path) {
 		read(d, "interlockedCentroidDistMm", interlockedCentroidDistMm);
 		read(d, "interlockedTolMm", interlockedTolMm);
 	}
+	if (j.contains("registro")) {
+		auto & r = j["registro"];
+		read(r, "separator", registro.separator);
+		read(r, "decimal", registro.decimal);
+		read(r, "folder", registro.folder);
+		read(r, "tokensFile", registro.tokensFile);
+	}
 	if (j.contains("menu")) {
 		read(j["menu"], "dwellSec", menuDwellSec);
 	}
@@ -130,6 +137,12 @@ void Settings::save(const std::string & path) const {
 		{ "interlockedTolMm", interlockedTolMm },
 	};
 	j["menu"] = { { "dwellSec", menuDwellSec } };
+	j["registro"] = {
+		{ "separator", registro.separator },
+		{ "decimal", registro.decimal },
+		{ "folder", registro.folder },
+		{ "tokensFile", registro.tokensFile },
+	};
 	j["ensamblaje"] = {
 		{ "fragmentsPerCycle", ensamblaje.fragmentsPerCycle },
 		{ "zoneRadiusCm", ensamblaje.zoneRadiusCm },

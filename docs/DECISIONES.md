@@ -157,3 +157,20 @@ Especificación completa en `docs/TOKENS.md`.
 
 La tecla C reinicia los contadores. Mientras está activo, el juego queda en pausa.
 **Motivo:** tarea 1 del plan del 09-11; se necesita antes de fabricar los tokens.
+
+### 2026-11-10 · Registro automático de eventos y reloj de sesión
+**Decisión:**
+- **Inicio de sesión:** al abrir la app se pide el código de la pareja. Desde ese momento corren un único reloj, visible en la **esquina superior derecha** («P01 mm:ss»), y un CSV por sesión con el formato fijo de la planilla: `Pareja;Juego;t (s);Evento;Token`, separador «;», coma decimal y UTF-8 con BOM. El separador, el decimal y la carpeta están en `settings.json`.
+- **Textos de eventos:** los de la lista fija, más **«Juego interrumpido»**, a pedido de Julián, cuando se sale de un juego a la mitad.
+- **Token de cada evento:**
+  - «Pieza fijada» y uniones o separaciones: Par;
+  - «Nodo completado»: A, B o Par, según quién lo activaba;
+  - el resto: No aplica.
+- **Qué no se registra:**
+  - «Punto perdido» solo cuando un punto se vacía, no cuando expira;
+  - el primer «Cambio de fase» de Resonancia, que coincide con el inicio del juego;
+  - nada fuera de los juegos.
+- **Archivo aparte:** las apariciones y desapariciones de tokens van a un segundo archivo.
+- **Privacidad:** los registros quedan fuera de Git, para no subir datos de participantes a GitHub.
+
+**Motivo:** tarea 2 del plan del 09-11. Los datos se analizarán en Excel y se sincronizan con el video de la cámara cenital mediante el reloj.

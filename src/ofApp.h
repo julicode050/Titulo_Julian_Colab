@@ -1,6 +1,7 @@
 #pragma once
 #include "Diagnostic.h"
 #include "Minigame.h"
+#include "Session.h"
 #include "Simulator.h"
 #include "Token.hpp"
 #include "TokenTracker.h"
@@ -9,7 +10,7 @@
 #include <memory>
 #include <vector>
 
-enum AppState { APP_MENU, APP_PLAYING, APP_RESULTS };
+enum AppState { APP_SESSION_START, APP_MENU, APP_PLAYING, APP_RESULTS };
 
 class ofApp : public ofBaseApp {
 public:
@@ -42,6 +43,9 @@ private:
 	void drawButtons(const std::vector<Button> & buttons);
 	void drawDebugPanel();
 	void drawInstructionsPanel();
+	void drawClock();
+	void drawSessionStart();
+	void abortGameIfRunning();
 
 	// --- Input & Tracking ---
 	Token token; // recepción TUIO y clasificación de formas
@@ -49,11 +53,13 @@ private:
 	TokenTracker tracker;
 	Simulator simulator;
 	Diagnostic diagnostic;
+	Session session;
+	std::string typedCode; // código de pareja mientras se escribe
 
 	// --- Juegos ---
 	std::vector<std::unique_ptr<Minigame>> games;
 	int currentGame = -1;
-	AppState state = APP_MENU;
+	AppState state = APP_SESSION_START;
 	std::vector<Button> menuButtons;
 	std::vector<Button> resultButtons;
 	bool showDebug = true;

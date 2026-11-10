@@ -32,6 +32,14 @@ struct Settings {
 	// --- Menú ---
 	float menuDwellSec = 1.5f;
 
+	// --- Registro de eventos (CSV por sesión, para Excel en español) ---
+	struct {
+		std::string separator = ";";
+		std::string decimal = ",";
+		std::string folder = "registros"; // dentro de bin/data
+		bool tokensFile = true; // archivo aparte con apariciones y desapariciones de tokens
+	} registro;
+
 	// --- Ensamblaje Progresivo ---
 	struct {
 		std::vector<int> fragmentsPerCycle = { 3, 3, 4, 4, 5, 5 };

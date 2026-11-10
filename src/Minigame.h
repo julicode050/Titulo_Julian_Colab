@@ -42,8 +42,8 @@ public:
 	}
 
 protected:
-	void event(const std::string & name, const std::string & detail = "") {
-		Events::notifyGame(id(), name, detail);
+	void event(const std::string & name, const std::string & detail = "", const std::string & token = "No aplica") {
+		Events::notifyGame(id(), name, detail, token);
 	}
 	static float cm(float v) { return settings().cm(v); }
 	// Número para texto en español: sin decimales si es entero, si no con coma ("2,5").

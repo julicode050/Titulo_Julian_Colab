@@ -94,11 +94,16 @@ void Resonancia::update(float dt, const TokenTracker & tracker) {
 		if (n.isDouble) {
 			// Requiere un grupo de tokens unidos sobre el nodo
 			for (auto & g : tracker.getGroups())
-				if (g.isJoined() && glm::distance(g.center, n.pos) < radius) active = true;
+				if (g.isJoined() && glm::distance(g.center, n.pos) < radius) active = true, n.actor = "Par";
 		} else {
 			// Cualquier token sirve, solo o unido
-			for (auto & t : tracker.getTokens())
-				if (t.visible && glm::distance(t.pos, n.pos) < radius) active = true;
+			for (auto & t : tracker.getTokens()) {
+				if (!t.visible || glm::distance(t.pos, n.pos) >= radius) continue;
+				int g = tracker.groupIndexOf(t.uid);
+				bool joined = g >= 0 && tracker.getGroups()[g].isJoined();
+				if (!active) n.actor = joined ? "Par" : t.label;
+				active = true;
+			}
 		}
 
 		float fillSec = n.isDouble ? s.doubleFillSec : s.fillSec;
@@ -112,7 +117,7 @@ void Resonancia::update(float dt, const TokenTracker & tracker) {
 				doubleDone++;
 			else
 				individualDone++;
-			event("node_completed", std::string("tipo=") + (n.isDouble ? "doble" : "individual") + " ciclo=" + ofToString(cycle + 1));
+			event("node_completed", std::string("tipo=") + (n.isDouble ? "doble" : "individual") + " ciclo=" + ofToString(cycle + 1), n.actor);
 		}
 	}
 

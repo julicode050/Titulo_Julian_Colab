@@ -23,6 +23,7 @@ struct GameEventArgs {
 	std::string name; // p. ej. "cycle_start", "node_completed"
 	std::string detail; // texto libre (valores, ids)
 	float time = 0;
+	std::string token = "No aplica"; // quién lo produjo: "A", "B", "Par" o "No aplica"
 };
 
 namespace Events {
@@ -34,8 +35,9 @@ inline ofEvent<GameEventArgs> & game() {
 	static ofEvent<GameEventArgs> e;
 	return e;
 }
-inline void notifyGame(const std::string & game, const std::string & name, const std::string & detail = "") {
-	GameEventArgs a { game, name, detail, ofGetElapsedTimef() };
+inline void notifyGame(const std::string & game, const std::string & name, const std::string & detail = "",
+	const std::string & token = "No aplica") {
+	GameEventArgs a { game, name, detail, ofGetElapsedTimef(), token };
 	ofNotifyEvent(Events::game(), a);
 }
 }

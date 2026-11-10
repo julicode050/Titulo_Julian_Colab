@@ -250,7 +250,7 @@ void Ensamblaje::update(float dt, const TokenTracker & tracker) {
 				spentUnion.insert(uid);
 			wrongNow.erase(toFix->index);
 			int remaining = (int)std::count_if(fragments.begin(), fragments.end(), [](auto & f) { return !f.fixed; });
-			event("fragment_fixed", "token=" + ofToString(carrier) + " restantes=" + ofToString(remaining));
+			event("fragment_fixed", "token=" + ofToString(carrier) + " restantes=" + ofToString(remaining), "Par");
 		}
 
 		for (auto & f : fragments)

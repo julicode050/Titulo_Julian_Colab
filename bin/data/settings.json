@@ -80,6 +80,12 @@
     "pantalla": {
         "pxPerCm": 36.43
     },
+    "registro": {
+        "decimal": ",",
+        "folder": "registros",
+        "separator": ";",
+        "tokensFile": true
+    },
     "resonancia": {
         "activationRadiusCm": 3.5,
         "cycles": 7,
