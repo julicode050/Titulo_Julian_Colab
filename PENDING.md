@@ -15,6 +15,8 @@ Commitments made while starting the minigame sprint (Oct 2026). Tick them off as
 
 Until then, "joined" is inferred by proximity: two tokens whose centres are closer than `joinDistanceCm` (5 cm), or whose contacts merge into one group of ≥ `joinedMinPoints` (6) points. This means tokens that merely pass close to each other also count as joined for a moment. With the new tokens, `joinDistanceCm` can probably be set to `0`.
 
+- [ ] **Electrical isolation when interlocked (confirmed by Julián 2026-11-10):** each token only registers while *its own* owner touches it, also when interlocked. If one person lets go of their token while interlocked, the screen stops seeing its 3 pads and the software logs a **Separación** even though the tokens are still physically joined. Julián identifies these cases when reviewing the log and the video after the session.
+
 ## 2. Report on occlusion
 - [ ] During testing, tell Claude whether a token physically covering what's drawn under it (fragments, nodes, points) is a problem. All games currently use the token's own centre, with no offset.
 
@@ -89,5 +91,19 @@ All values below live in `bin/data/settings.json` and can be changed without rec
 
 ## 6. Later
 - [ ] Confirm the final number of tokens (2 for now, one per person).
-- [ ] Automatic event logging (CSV/JSON). Out of scope this sprint, so Julián logs manually. The code is ready: listen to `Events::token()` and `Events::game()` in `src/Events.h`.
+- [ ] ~~Automatic event logging~~ → now in scope: task 2 of the 2026-11-09 plan (section 7).
 - [ ] Scaling to 4 people (out of scope this sprint). Note: the interlocked-pair recognition assumes exactly **two** tokens of 3 pads each; it would need generalizing for more tokens. (Report 2026-10-15.)
+
+## 7. Plan after the research update (2026-11-09)
+New hypothesis: a pair's interaction quality is higher when working with the tokens interlocked than when working apart (compared within each pair). The pair chooses when to interlock; the software must not force it, except to fix pieces in Ensamblaje. Easy interlocking is a requirement. Data goes to an Excel sheet via an event log.
+
+All tasks are done on branch `tokens-v1` (Julián, 2026-11-10), merged into `main` in task 7.
+
+- [x] **1. Diagnostic mode** (2026-11-10): **P** key. Raw contacts with stable numbers and positions in mm, distances between contacts (centre to centre and edge to edge), min/max contacts in the last 5 s, counts of appearances / disappearances / brief contacts (< 0.5 s), what the system recognizes (A, B read as E, interlocked pair), and a timed log of contact and token events. **C** resets the counters. No game runs while it's on. Verified in the simulator; still to use with the real probes.
+- [ ] **2. Event log and session clock:** pair code at session start; one session clock in mm:ss visible to the overhead camera; one CSV per session `Pareja;Juego;t (s);Evento;Token` with fixed event texts; `;` separator, decimal comma, UTF-8 with BOM (separator and decimal configurable); optional separate file with token appear/disappear.
+- [ ] **3. Marea:** pair currently fills 3× gross (11× net after decay) and scores 4× a single token, and losing a point costs nothing. Target: pair ≈ 2.5× a single token and a cost for losing a point, values in settings.json.
+- [ ] **4. Resonancia:** double nodes optional and worth more; less time or more nodes so splitting up is needed; keep 6 / 14 / 24 cm spacing with fixed seed.
+- [ ] **5. Ensamblaje and game order:** one piece per union is already implemented (`ac5b32b`). Add a 4th menu button, **"Modo testeo"**, that runs the three games in a fixed order: Ensamblaje, Resonancia, Marea. The individual game buttons stay.
+- [ ] **6. Brief contact losses:** configurable tolerance for brief losses, individual and for the pair (today: 15 frames per token, separation confirmed after 10 frames), so re-gripping doesn't count as a separation.
+- [ ] **7. Real tokens:** verify pair recognition, calibrate `pairFitTolMm` / `interlockedTolMm`, then merge `tokens-v1` into `main`.
+- [ ] **8. Report** at the end of each working day.

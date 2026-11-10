@@ -18,6 +18,7 @@ void ofApp::setup() {
 	// Initialize token tracking
 	token.setup(ofVec2f(0, 0));
 	tracker.setup(&token);
+	diagnostic.setup();
 	simulator.setup();
 
 	games.push_back(std::make_unique<Ensamblaje>());
@@ -60,6 +61,12 @@ void ofApp::update() {
 
 	contactCount = pts.size();
 	tracker.update(pts);
+
+	// Modo diagnóstico: sin reglas de juego; el juego en curso queda en pausa.
+	if (diagnostic.active) {
+		diagnostic.update(pts);
+		return;
+	}
 
 	if (state == APP_MENU) {
 		int chosen = updateDwell(menuButtons, dt);
@@ -105,8 +112,18 @@ void ofApp::goToMenu() {
 }
 
 //--------------------------------------------------------------
+void ofApp::exit() {
+	diagnostic.exit();
+}
+
 void ofApp::draw() {
 	ofBackground(Ui::background);
+
+	if (diagnostic.active) {
+		diagnostic.draw(tracker);
+		simulator.draw();
+		return;
+	}
 
 	if (state == APP_MENU) {
 		drawButtons(menuButtons);
@@ -206,7 +223,7 @@ void ofApp::drawDebugPanel() {
 		if (g.isJoined()) joined++;
 	lines.push_back("Grupos unidos: " + ofToString(joined));
 	lines.push_back("");
-	lines.push_back("1/2/3 juego | M menu | R reiniciar | S simulador | I instrucciones | F pantalla completa");
+	lines.push_back("1/2/3 juego | M menu | R reiniciar | S simulador | I instrucciones | P diagnostico | F pantalla completa");
 
 	ofPushStyle();
 	int y = 24;
@@ -261,6 +278,15 @@ void ofApp::keyPressed(int key) {
 	case 'i':
 	case 'I':
 		showInstructions = !showInstructions;
+		break;
+	case 'p':
+	case 'P':
+		diagnostic.active = !diagnostic.active;
+		if (diagnostic.active) diagnostic.resetCounters();
+		break;
+	case 'c':
+	case 'C':
+		if (diagnostic.active) diagnostic.resetCounters();
 		break;
 	case 'd':
 	case 'D':

@@ -1,4 +1,5 @@
 #pragma once
+#include "Diagnostic.h"
 #include "Minigame.h"
 #include "Simulator.h"
 #include "Token.hpp"
@@ -15,6 +16,7 @@ public:
 	void setup() override;
 	void update() override;
 	void draw() override;
+	void exit() override;
 	void keyPressed(int key) override;
 	void mousePressed(int x, int y, int button) override;
 	void mouseDragged(int x, int y, int button) override;
@@ -46,6 +48,7 @@ private:
 	std::map<int, ofVec2f> nativeTouches; // Maps touch ID to screen coords
 	TokenTracker tracker;
 	Simulator simulator;
+	Diagnostic diagnostic;
 
 	// --- Juegos ---
 	std::vector<std::unique_ptr<Minigame>> games;

@@ -131,3 +131,29 @@ Especificación completa en `docs/TOKENS.md`.
 ### 2026-10-15 · La rama `tokens-v1` queda separada de `main` hasta probar con tokens reales
 **Decisión:** el reconocimiento de los tokens nuevos queda en la rama `tokens-v1`, sin fusionar con `main`. Julián hará el merge después de probarlo con los tokens fabricados.
 **Motivo:** el cambio solo se verificó en el simulador. `main` conserva la detección que funciona con los tokens actuales mientras los nuevos no existan físicamente.
+
+### 2026-11-09 · Cambio en la investigación: comparación encajados vs. separados
+**Decisión:**
+- **Hipótesis:** la calidad de la interacción de una pareja es mayor cuando trabaja con los tokens encajados que cuando trabaja separada. La comparación se hace dentro de cada pareja.
+- **El software no fuerza la unión:** la pareja elige cuándo encajarse. La única excepción es fijar piezas en Ensamblaje Progresivo.
+- **El encaje debe ser fácil:** las fallas técnicas contaminarían la comparación.
+- **Registro de eventos automático**, con formato fijo para analizarlo en Excel.
+**Motivo:** redefinición del diseño de investigación por parte de Julián. Reemplaza la exclusión del logging automático del brief original.
+
+### 2026-11-10 · Plan de trabajo en `tokens-v1`; aislamiento eléctrico al encajar; "Modo testeo"
+**Decisión:**
+- Las tareas del plan del 09-11 se hacen en la rama `tokens-v1`, porque dependen del reconocimiento del par encajado, que solo existe ahí. Se fusiona con `main` al validar con los tokens reales.
+- **Aislamiento eléctrico:** cada token solo se detecta mientras su dueño lo toca, también estando encajados. Si una persona suelta su token encajado, el software registra una separación. Julián identificará esos casos al revisar el registro y el video; el software no intenta distinguirlos.
+- **Orden de los juegos:** el menú suma un cuarto botón, "Modo testeo", que corre Ensamblaje, Resonancia y Marea seguidos y en ese orden. Los botones de cada juego se mantienen.
+**Motivo:** respuestas de Julián del 10-11.
+
+### 2026-11-10 · Modo diagnóstico (tecla P)
+**Decisión:** un modo aparte, sin reglas de juego, para las probetas y la prueba de agarre. Muestra:
+- cada contacto crudo, con un número estable y su posición en mm;
+- las distancias entre contactos, de centro a centro y de borde a borde;
+- el mínimo y el máximo de contactos de los últimos 5 s, y cuántos contactos aparecieron, desaparecieron o duraron menos de 0,5 s, para detectar parpadeos;
+- qué reconoce el sistema: A, B (leído como E) o el par encajado;
+- un registro con hora de las apariciones y desapariciones de contactos y tokens.
+
+La tecla C reinicia los contadores. Mientras está activo, el juego queda en pausa.
+**Motivo:** tarea 1 del plan del 09-11; se necesita antes de fabricar los tokens.
