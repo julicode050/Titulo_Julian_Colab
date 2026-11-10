@@ -47,7 +47,7 @@ All values below live in `bin/data/settings.json` and can be changed without rec
 
 **Marea de Presión**
 - [ ] Session 330 s. At most 3 points at once, a new one every 6–12 s. Each point lasts 40 s.
-- [ ] Fill starts at 60 %, decays 0.04/s. Fill gain is +0.05/s with 1 token, +0.15/s joined. Score is 1/s low mode, 4/s high mode.
+- [ ] Fill starts at 60 %, decays 0.04/s. Fill gain is +0.05/s with 1 token, **+0.125/s joined**. Score is 1/s low mode, **2.5/s high mode**. **A point that empties costs −10** (`lostPointPenalty`); one that expires costs nothing. (Changed 2026-11-10, task 3.)
 - [ ] A point disappears when empty or at the end of its lifetime.
 - [ ] Two tokens on the same point but *not* joined = low mode.
 - [ ] Fusion: 2 points closer than 8 cm merge when a joined group of ≥ `fusionMinTokens` (4) covers both. Never happens with 2 people (expected).
@@ -109,7 +109,8 @@ All tasks are done on branch `tokens-v1` (Julián, 2026-11-10), merged into `mai
   - `bin/data/registros/` is **excluded from Git**, so participants' data never goes to GitHub.
   - Verified with a simulated session. «Pieza fijada» wasn't exercised in that run.
 - [ ] Check at the table that the clock box (top-right, 7.5 × 1.9 cm) doesn't cover nodes or pressure points that spawn in that corner; if it does, keep games out of that area.
-- [ ] **3. Marea:** pair currently fills 3× gross (11× net after decay) and scores 4× a single token, and losing a point costs nothing. Target: pair ≈ 2.5× a single token and a cost for losing a point, values in settings.json.
+- [x] **3. Marea** (2026-11-10): the pair now fills and scores **2.5×** a single token (0.125/s fill, 2.5 pts/s), and a point that empties costs **−10**, shown as a red "−10" over the lost point and in the results. Verified in the simulator. With one active point joining pays off (2.5 vs 1/s); with two, splitting up does (≈30 vs 27.5 over the ~15 s it takes the neglected point to empty).
+- [ ] Calibrate the Marea balance in bodystorming: check whether pairs really face a choice, and adjust `highScorePerSec`, `lostPointPenalty` and `decayPerSec` if they don't.
 - [ ] **4. Resonancia:** double nodes optional and worth more; less time or more nodes so splitting up is needed; keep 6 / 14 / 24 cm spacing with fixed seed.
 - [ ] **5. Ensamblaje and game order:** one piece per union is already implemented (`ac5b32b`). Add a 4th menu button, **"Modo testeo"**, that runs the three games in a fixed order: Ensamblaje, Resonancia, Marea. The individual game buttons stay.
 - [ ] **6. Brief contact losses:** configurable tolerance for brief losses, individual and for the pair (today: 15 frames per token, separation confirmed after 10 frames), so re-gripping doesn't count as a separation.

@@ -92,6 +92,7 @@ void Settings::load(const std::string & path) {
 		read(m, "highFillPerSec", marea.highFillPerSec);
 		read(m, "lowScorePerSec", marea.lowScorePerSec);
 		read(m, "highScorePerSec", marea.highScorePerSec);
+		read(m, "lostPointPenalty", marea.lostPointPenalty);
 		read(m, "pointRadiusCm", marea.pointRadiusCm);
 		read(m, "holdRadiusCm", marea.holdRadiusCm);
 		read(m, "edgeMarginCm", marea.edgeMarginCm);
@@ -182,6 +183,7 @@ void Settings::save(const std::string & path) const {
 		{ "highFillPerSec", marea.highFillPerSec },
 		{ "lowScorePerSec", marea.lowScorePerSec },
 		{ "highScorePerSec", marea.highScorePerSec },
+		{ "lostPointPenalty", marea.lostPointPenalty },
 		{ "pointRadiusCm", marea.pointRadiusCm },
 		{ "holdRadiusCm", marea.holdRadiusCm },
 		{ "edgeMarginCm", marea.edgeMarginCm },

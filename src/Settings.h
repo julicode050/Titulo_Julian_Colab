@@ -82,9 +82,10 @@ struct Settings {
 		float startFill = 0.6f;
 		float decayPerSec = 0.04f; // vacío total en ~25 s sin tokens
 		float lowFillPerSec = 0.05f; // ganancia bruta con 1 token (neto ~ +0.01/s)
-		float highFillPerSec = 0.15f; // ganancia bruta con tokens unidos
+		float highFillPerSec = 0.125f; // ganancia bruta con tokens unidos (2,5 veces un token)
 		float lowScorePerSec = 1.0f;
-		float highScorePerSec = 4.0f;
+		float highScorePerSec = 2.5f; // 2,5 veces un token: algo más que dos tokens separados
+		float lostPointPenalty = 10.0f; // se descuenta cuando un punto se vacía (no cuando expira)
 		float pointRadiusCm = 2.6f;
 		float holdRadiusCm = 3.5f;
 		float edgeMarginCm = 4.0f;

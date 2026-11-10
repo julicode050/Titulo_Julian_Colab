@@ -174,3 +174,14 @@ La tecla C reinicia los contadores. Mientras está activo, el juego queda en pau
 - **Privacidad:** los registros quedan fuera de Git, para no subir datos de participantes a GitHub.
 
 **Motivo:** tarea 2 del plan del 09-11. Los datos se analizarán en Excel y se sincronizan con el video de la cámara cenital mediante el reloj.
+
+### 2026-11-10 · Marea: el par rinde 2,5 veces un token y perder un punto cuesta
+**Decisión:**
+- El par llena a 0,125/s (antes 0,15) y puntúa 2,5/s (antes 4); un token sigue en 0,05/s y 1/s.
+- Un punto que se vacía descuenta 10 puntos (`lostPointPenalty`); uno que expira no cuesta nada.
+- La pérdida se muestra con un «−10» rojo sobre el punto y en la pantalla de resultados.
+**Motivo:** el código confirmó que unirse siempre convenía. El par llenaba 3 veces más en bruto, pero 11 veces más en neto una vez restado el decaimiento, y puntuaba 4 veces más; además, perder un punto no tenía costo. Con la nueva hipótesis (09-11), la pareja debe elegir de verdad cuándo unirse:
+- con un solo punto activo, unirse conviene (2,5 contra 1 por segundo);
+- con dos puntos, separarse conviene (≈30 contra 27,5 en los ~15 s que tarda en vaciarse el punto desatendido).
+
+Valores aprobados por Julián; quedan por calibrar en bodystorming.

@@ -41,5 +41,12 @@ private:
 	int nextId = 1;
 	bool finished = false;
 	float scoreLow = 0, scoreHigh = 0;
+	int pointsLost = 0;
+	struct LossMark { // "-10" flotante donde se perdió un punto
+		glm::vec2 pos;
+		float at;
+	};
+	std::vector<LossMark> lossMarks;
+	long totalScore() const;
 	std::mt19937 rng;
 };

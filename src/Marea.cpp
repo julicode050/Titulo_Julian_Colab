@@ -12,6 +12,8 @@ void Marea::start() {
 	nextId = 1;
 	finished = false;
 	scoreLow = scoreHigh = 0;
+	pointsLost = 0;
+	lossMarks.clear();
 	event("game_start");
 }
 
@@ -117,7 +119,10 @@ void Marea::update(float dt, const TokenTracker & tracker) {
 		p.age += dt;
 		if (p.fill <= 0) {
 			p.alive = false;
-			event("point_emptied", "punto=" + ofToString(p.id));
+			// Perder un punto cuesta: así dejar puntos sin atender (por ir unidos a otro) tiene un precio.
+			pointsLost++;
+			lossMarks.push_back({ p.pos, ofGetElapsedTimef() });
+			event("point_emptied", "punto=" + ofToString(p.id) + " penalizacion=" + ofToString(s.lostPointPenalty));
 		} else if (p.age >= s.pointLifetimeSec) {
 			p.alive = false;
 			event("point_expired", "punto=" + ofToString(p.id));
@@ -127,7 +132,8 @@ void Marea::update(float dt, const TokenTracker & tracker) {
 
 	if (elapsed >= s.sessionSec) {
 		finished = true;
-		event("game_end", "puntajeBajo=" + ofToString(std::lround(scoreLow)) + " puntajeAlto=" + ofToString(std::lround(scoreHigh)));
+		event("game_end", "puntajeBajo=" + ofToString(std::lround(scoreLow)) + " puntajeAlto=" + ofToString(std::lround(scoreHigh))
+				+ " puntosPerdidos=" + ofToString(pointsLost) + " total=" + ofToString(totalScore()));
 	}
 }
 
@@ -170,8 +176,23 @@ void Marea::draw(const TokenTracker & tracker) {
 	ofPopStyle();
 
 	ofSetColor(255, 200);
-	Ui::text(ofToString(std::lround(scoreLow) + std::lround(scoreHigh)), ofGetWidth() * 0.5f, cm(1.2f), 1);
+	// Marcas "-10" que suben y se desvanecen donde se perdió un punto
+	float now = ofGetElapsedTimef();
+	for (auto & m : lossMarks) {
+		float k = (now - m.at) / 1.5f;
+		if (k > 1) continue;
+		ofSetColor(235, 80, 80, 255 * (1 - k));
+		Ui::text("-" + num(s.lostPointPenalty), m.pos.x, m.pos.y - cm(1.5f) * k, 1);
+	}
+	lossMarks.erase(std::remove_if(lossMarks.begin(), lossMarks.end(), [now](auto & m) { return now - m.at > 1.5f; }), lossMarks.end());
+
+	ofSetColor(255, 200);
+	Ui::text(ofToString(totalScore()), ofGetWidth() * 0.5f, cm(1.2f), 1);
 	drawTokens(tracker);
+}
+
+long Marea::totalScore() const {
+	return std::lround(scoreLow) + std::lround(scoreHigh) - std::lround(pointsLost * settings().marea.lostPointPenalty);
 }
 
 void Marea::drawResults() {
@@ -180,9 +201,11 @@ void Marea::drawResults() {
 	ofSetColor(255);
 	// Redondeo único para que el total coincida con la suma visible
 	long low = std::lround(scoreLow), high = std::lround(scoreHigh);
-	Ui::text("Puntaje total   " + ofToString(low + high), cx, y, 2);
+	long penalty = std::lround(pointsLost * settings().marea.lostPointPenalty);
+	Ui::text("Puntaje total   " + ofToString(totalScore()), cx, y, 2);
 	Ui::text("Modo individual   " + ofToString(low), cx, y + cm(3), 1);
 	Ui::text("Modo unido   " + ofToString(high), cx, y + cm(4.5f), 1);
+	Ui::text("Puntos perdidos   " + ofToString(pointsLost) + "  (-" + ofToString(penalty) + ")", cx, y + cm(6.0f), 1);
 }
 
 std::vector<std::string> Marea::instructions() const {
@@ -191,11 +214,13 @@ std::vector<std::string> Marea::instructions() const {
 		"OBJETIVO: sumar puntaje sosteniendo puntos de presión.",
 		"",
 		"- Los puntos aparecen de a poco (máx. " + ofToString(s.maxActivePoints) + " a la vez) y se vacían solos.",
-		"- 1 token sobre un punto: modo bajo, llena lento (" + num(s.lowScorePerSec) + " pt/s).",
-		"- 2 tokens UNIDOS sobre un punto: modo alto, llena rápido (" + num(s.highScorePerSec) + " pts/s).",
-		"- Un punto desaparece al vaciarse o a los " + num(s.pointLifetimeSec) + " s.",
+		"- 1 token sobre un punto: modo bajo (" + num(s.lowScorePerSec) + " pt/s).",
+		"- 2 tokens UNIDOS sobre un punto: modo alto (" + num(s.highScorePerSec) + " pts/s).",
+		"- Un punto que se vacía se pierde y resta " + num(s.lostPointPenalty) + " pts.",
+		"  Los puntos también terminan solos a los " + num(s.pointLifetimeSec) + " s (sin costo).",
+		"- Unirse rinde más en un punto, pero deja los otros sin atender.",
 		"",
 		"GANAR: puntaje total al terminar (" + num(s.sessionSec / 60.0f) + " min),",
-		"separado en modo individual y modo unido.",
+		"separado en modo individual, modo unido y puntos perdidos.",
 	};
 }
